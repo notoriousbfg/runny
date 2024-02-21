@@ -1,0 +1,10 @@
+vars:
+  name: "Tim"
+
+targets:
+  say_hello: >
+    echo "Hello $MYNAME"
+
+run:
+  say_hello:
+    MYNAME: Tim
