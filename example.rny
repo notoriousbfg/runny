@@ -1,0 +1,40 @@
+var {
+	default_namespace "my-project"
+	mysql_root_password "root"
+}
+
+target build_container:private {
+    docker build \
+		-f .simulacrum/localstack/lambdas/$name.dockerfile \
+		--build-arg $db_user \
+		--build-arg $db_password \
+		--build-arg $db_host \
+		--build-arg $db_name \
+		-t "$namespace:$name" \
+		--no-cache \
+		.
+}
+
+target build {
+	doc {
+		**Build** the _project_.
+	}
+    run build_container {
+		namespace: $default_namespace,
+        name: "my-container",
+		db_user: "tim",
+		db_password: "password123",
+		db_host: "localhost",
+		db_name: "tim_loves_the_db"
+    }
+	run {
+		docker run -d \
+			--name "my-container" \
+			--network "my-network" \
+			-p 3306:3306 \
+			-e MYSQL_ROOT_PASSWORD=$mysql_root_password
+
+		docker run ...
+	}
+}
+
