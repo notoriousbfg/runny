@@ -14,15 +14,15 @@ type Runny struct {
 }
 
 func (r *Runny) Scan() error {
+	var err error
 	fileContents, err := os.ReadFile(r.Config.File)
 	if err != nil {
 		return err
 	}
-	lexer, err := lexer.New(string(fileContents))
+	r.Lexer, err = lexer.New(string(fileContents))
 	if err != nil {
 		return err
 	}
-	r.Lexer = lexer
 	return nil
 }
 
@@ -51,7 +51,8 @@ func main() {
 	runny.Config.File = file
 
 	if err := runny.Scan(); err != nil {
-		fmt.Println("scan error:", err)
+		fmt.Println("scan error:", err, ", (tokens:", lexer.TokenTypeNames(runny.Lexer.TokenTypes()), ")")
+		return
 	}
 
 	fmt.Print(runny.Lexer.Tokens)

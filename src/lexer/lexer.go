@@ -14,9 +14,9 @@ func New(input string) (Lexer, error) {
 		Start:   0,
 		Current: 0,
 	}
-	err := lexer.ReadInput()
+	err := lexer.readInput()
 	if err != nil {
-		return Lexer{}, err
+		return lexer, err
 	}
 	return lexer, nil
 }
@@ -29,7 +29,7 @@ type Lexer struct {
 	Line    int
 }
 
-func (l *Lexer) ReadInput() error {
+func (l *Lexer) readInput() error {
 	for !l.isAtEnd() {
 		l.Start = l.Current
 		err := l.readChar()
@@ -110,7 +110,7 @@ func (l *Lexer) matchString() {
 		l.nextChar()
 	}
 	l.nextChar()
-	text := l.Input[l.Start+1 : l.Current-1] // is this right?
+	text := l.Input[l.Start+1 : l.Current-1]
 	l.addToken(token.STRING, text)
 }
 
@@ -140,17 +140,34 @@ func (l *Lexer) matchNumber() {
 	l.addToken(token.NUMBER, text)
 }
 
+// func (l *Lexer) matchAction() {
+// 	for l.peek() != "}" && !l.isAtEnd() {
+// 		l.nextChar()
+// 	}
+// 	text := l.Input[l.Start:l.Current]
+// 	l.addToken(token.ACTION, text)
+// }
+
 func (l *Lexer) matchIdentifier() {
-	for isAlphaNumeric(l.peek()) && !l.isAtEnd() {
+	for (isAlphaNumeric(l.peek()) || isAllowedIdentChar(l.peek())) && !l.isAtEnd() {
 		l.nextChar()
 	}
 
 	text := l.Input[l.Start:l.Current]
-	if tokenType, ok := token.Keywords()[text]; ok {
+	// var, target, run etc
+	if tokenType, ok := token.Keywords[text]; ok {
 		l.addToken(tokenType, text)
 	} else {
 		l.addToken(token.IDENTIFIER, text)
 	}
+}
+
+func TokenTypeNames(types []token.TokenType) []string {
+	var typeNames []string
+	for _, t := range types {
+		typeNames = append(typeNames, token.TokenTypeNames[t])
+	}
+	return typeNames
 }
 
 func isDigit(ch string) bool {
@@ -169,4 +186,12 @@ func isLetter(ch string) bool {
 
 func isAlphaNumeric(ch string) bool {
 	return isDigit(ch) || isLetter(ch)
+}
+
+// is this horrendously verbose?
+func isAllowedIdentChar(ch string) bool {
+	allowed := map[string]bool{
+		"_": true,
+	}
+	return allowed[ch]
 }

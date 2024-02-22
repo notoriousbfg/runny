@@ -14,7 +14,7 @@ type TokenCase struct {
 
 func TestLexer(t *testing.T) {
 	cases := map[string]TokenCase{
-		"variable declaration block with string": {
+		"basic: string variable declaration": {
 			inputString: "var { hello \"world\" }",
 			types: []token.TokenType{
 				token.VAR,
@@ -25,7 +25,7 @@ func TestLexer(t *testing.T) {
 				token.EOF,
 			},
 		},
-		"multiple variable declarations block with string": {
+		"basic: multiple string variable declarations": {
 			inputString: "var { hello \"world\", name \"tim\" }",
 			types: []token.TokenType{
 				token.VAR,
@@ -39,6 +39,32 @@ func TestLexer(t *testing.T) {
 				token.EOF,
 			},
 		},
+		"basic: target": {
+			inputString: "target { echo \"hello\" }",
+			types: []token.TokenType{
+				token.TARGET,
+				token.LEFT_BRACE,
+				token.ACTION,
+				token.RIGHT_BRACE,
+				token.EOF,
+			},
+		},
+		"basic: nested declarations": {
+			inputString: "target { echo \"hello\" var { name \"tim\" } echo \"tim\" }",
+			types: []token.TokenType{
+				token.TARGET,
+				token.LEFT_BRACE,
+				token.ACTION,
+				token.VAR,
+				token.LEFT_BRACE,
+				token.IDENTIFIER,
+				token.STRING,
+				token.RIGHT_BRACE,
+				token.ACTION,
+				token.RIGHT_BRACE,
+				token.EOF,
+			},
+		},
 	}
 
 	for name, testcase := range cases {
@@ -48,7 +74,7 @@ func TestLexer(t *testing.T) {
 				t.Fatalf("wantErr '%v', got '%+v', tokens: '%v'", testcase.wantErr, err, l.Tokens)
 			}
 			if !slicesMatch(l.TokenTypes(), testcase.types) {
-				t.Fatal("types do not match", testcase.types, l.TokenTypes())
+				t.Fatal("types do not match", lexer.TokenTypeNames(testcase.types), lexer.TokenTypeNames(l.TokenTypes()))
 			}
 		})
 	}
