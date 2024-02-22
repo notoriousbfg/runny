@@ -5,10 +5,29 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runny/src/lexer"
 )
 
 type Runny struct {
+	Lexer  lexer.Lexer
 	Config Config
+}
+
+func (r *Runny) Scan() error {
+	fileContents, err := os.ReadFile(r.Config.File)
+	if err != nil {
+		return err
+	}
+	lexer, err := lexer.New(string(fileContents))
+	if err != nil {
+		return err
+	}
+	r.Lexer = lexer
+	return nil
+}
+
+func (r *Runny) Parse() error {
+	return nil
 }
 
 type Config struct {
@@ -17,7 +36,7 @@ type Config struct {
 
 func main() {
 	var fileFlag string
-	flag.StringVar(&fileFlag, "f", "runny.yml", "config file location")
+	flag.StringVar(&fileFlag, "f", "config.rny", "config file location")
 	flag.Parse()
 
 	runny := Runny{
@@ -26,11 +45,16 @@ func main() {
 
 	file, err := configFile(fileFlag)
 	if err != nil {
-		fmt.Println("error:", err)
+		fmt.Println("config error:", err)
 		return
 	}
 	runny.Config.File = file
 
+	if err := runny.Scan(); err != nil {
+		fmt.Println("scan error:", err)
+	}
+
+	fmt.Print(runny.Lexer.Tokens)
 }
 
 func configFile(flag string) (string, error) {
@@ -43,8 +67,8 @@ func configFile(flag string) (string, error) {
 		return "", err
 	}
 	extension := filepath.Ext(path)
-	if extension != ".yml" && extension != ".yaml" {
-		return "", fmt.Errorf("the config file is not a yaml file")
+	if extension != ".rny" {
+		return "", fmt.Errorf("rny file not found")
 	}
 	return path, nil
 }

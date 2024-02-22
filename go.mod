@@ -1,3 +1,3 @@
-module github.com/notoriousbfg/runny
+module runny
 
 go 1.22
