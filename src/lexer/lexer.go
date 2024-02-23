@@ -56,10 +56,11 @@ func (l *Lexer) readChar() error {
 		l.addToken(token.COMMA, char)
 	case "-":
 		if l.matchNext("-") {
-			if isAlphaNumeric(l.peekNext()) {
+			if isAlphaNumeric(l.peek()) {
 				l.matchFlag()
+			} else {
+				l.addToken(token.OPERATOR, "--")
 			}
-			l.addToken(token.OPERATOR, "--")
 		} else if isAlphaNumeric(l.peek()) {
 			l.matchFlag()
 		} else {

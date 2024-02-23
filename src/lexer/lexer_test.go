@@ -78,6 +78,16 @@ func TestLexer(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 		},
+		"intermediate: command with double flag": {
+			inputString: "docker build --f dev.dockerfile",
+			want: []token.Token{
+				{Type: token.IDENTIFIER, Text: "docker"},
+				{Type: token.IDENTIFIER, Text: "build"},
+				{Type: token.FLAG, Text: "--f"},
+				{Type: token.IDENTIFIER, Text: "dev.dockerfile"},
+				{Type: token.EOF, Text: ""},
+			},
+		},
 		// "intermediate: multi line command": {
 		// 	inputString: `
 		// 		target build_container:private {
