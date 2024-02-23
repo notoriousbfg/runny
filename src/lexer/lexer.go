@@ -54,6 +54,12 @@ func (l *Lexer) readChar() error {
 		l.addToken(token.COLON, char)
 	case ",":
 		l.addToken(token.COMMA, char)
+	case ".":
+		if isAlphaNumeric(l.peek()) || isAllowedIdentChar(l.peek()) {
+			l.matchIdentifier()
+		} else {
+			l.addToken(token.OPERATOR, char)
+		}
 	case "-":
 		if l.matchNext("-") {
 			if isAlphaNumeric(l.peek()) {
@@ -66,7 +72,7 @@ func (l *Lexer) readChar() error {
 		} else {
 			l.addToken(token.OPERATOR, "-")
 		}
-	case "+", "*", "/", `\`, ".":
+	case "+", "*", "/", `\`:
 		l.addToken(token.OPERATOR, char)
 	case "$":
 		l.matchIdentifier()
@@ -187,7 +193,7 @@ func (l *Lexer) matchIdentifier() {
 }
 
 func (l *Lexer) matchFlag() {
-	for isLetter(l.peek()) && !l.isAtEnd() {
+	for (isLetter(l.peek()) || isHyphen(l.peek())) && !l.isAtEnd() {
 		l.nextChar()
 	}
 	l.addToken(token.FLAG, l.Input[l.Start:l.Current])
@@ -232,6 +238,12 @@ func isAllowedIdentChar(ch string) bool {
 	allowed := map[string]bool{
 		"_": true,
 		".": true,
+		"/": true,
+		"$": true,
 	}
 	return allowed[ch]
+}
+
+func isHyphen(ch string) bool {
+	return ch == "-"
 }
