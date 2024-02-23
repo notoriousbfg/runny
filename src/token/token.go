@@ -1,5 +1,7 @@
 package token
 
+import "fmt"
+
 type TokenType int
 
 const (
@@ -63,4 +65,14 @@ type Token struct {
 	Text     string
 	Position int
 	Line     int
+}
+
+func (t Token) String() string {
+	switch {
+	case t.Type == EOF:
+		return "EOF"
+	case len(t.Text) > 10:
+		return fmt.Sprintf("%.10q...", t.Text)
+	}
+	return fmt.Sprintf("%q", t.Text)
 }

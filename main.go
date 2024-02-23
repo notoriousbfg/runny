@@ -30,6 +30,7 @@ func (r *Runny) Scan() error {
 
 func (r *Runny) Parse() error {
 	r.Parser = parser.New(r.Lexer.Tokens)
+	// r.Parser.Parse()
 	return nil
 }
 
@@ -65,6 +66,7 @@ func main() {
 		return
 	}
 
+	// i think we can condense the scan & parse stages into one by using a channel
 	if err := runny.Parse(); err != nil {
 		fmt.Println("parse error:", err)
 		return
