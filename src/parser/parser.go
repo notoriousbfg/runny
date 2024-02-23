@@ -41,6 +41,10 @@ func (p *Parser) varDeclaration() tree.Statement {
 	}
 
 	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		if p.check(token.COMMA) {
+			p.advance()
+		}
+
 		varDecl.Items = append(varDecl.Items, tree.Variable{
 			Name:        p.consume(token.IDENTIFIER, "expect variable name"),
 			Initialiser: p.expression(),
