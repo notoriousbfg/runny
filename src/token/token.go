@@ -12,6 +12,7 @@ const (
 	STRING
 	NUMBER
 	OPERATOR
+	FLAG
 	COMMENT
 
 	VAR
@@ -32,6 +33,7 @@ var TokenTypeNames = map[TokenType]string{
 	STRING:     "STRING",
 	NUMBER:     "NUMBER",
 	OPERATOR:   "OPERATOR",
+	FLAG:       "FLAG",
 	COMMENT:    "COMMENT",
 
 	VAR:    "VAR",

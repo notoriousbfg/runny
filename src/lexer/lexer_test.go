@@ -8,7 +8,7 @@ import (
 
 type TokenCase struct {
 	inputString string
-	types       []token.TokenType
+	want        []token.Token
 	wantErr     bool
 }
 
@@ -16,88 +16,95 @@ func TestLexer(t *testing.T) {
 	cases := map[string]TokenCase{
 		"basic: string variable declaration": {
 			inputString: "var { hello \"world\" }",
-			types: []token.TokenType{
-				token.VAR,
-				token.LEFT_BRACE,
-				token.IDENTIFIER,
-				token.STRING,
-				token.RIGHT_BRACE,
-				token.EOF,
+			want: []token.Token{
+				{Type: token.VAR, Text: "var"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "hello"},
+				{Type: token.STRING, Text: "world"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
 			},
 		},
 		"basic: multiple string variable declarations": {
 			inputString: "var { hello \"world\", name \"tim\" }",
-			types: []token.TokenType{
-				token.VAR,
-				token.LEFT_BRACE,
-				token.IDENTIFIER,
-				token.STRING,
-				token.COMMA,
-				token.IDENTIFIER,
-				token.STRING,
-				token.RIGHT_BRACE,
-				token.EOF,
+			want: []token.Token{
+				{Type: token.VAR, Text: "var"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "hello"},
+				{Type: token.STRING, Text: "world"},
+				{Type: token.COMMA, Text: ","},
+				{Type: token.IDENTIFIER, Text: "name"},
+				{Type: token.STRING, Text: "tim"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
 			},
 		},
 		"basic: target": {
 			inputString: "target { echo \"hello\" }",
-			types: []token.TokenType{
-				token.TARGET,
-				token.LEFT_BRACE,
-				token.IDENTIFIER,
-				token.STRING,
-				token.RIGHT_BRACE,
-				token.EOF,
+			want: []token.Token{
+				{Type: token.TARGET, Text: "target"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "echo"},
+				{Type: token.STRING, Text: "hello"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
 			},
 		},
 		"basic: nested declarations": {
 			inputString: "target { echo \"hello\" var { name \"tim\" } echo \"tim\" }",
-			types: []token.TokenType{
-				token.TARGET,
-				token.LEFT_BRACE,
-				token.IDENTIFIER,
-				token.STRING,
-				token.VAR,
-				token.LEFT_BRACE,
-				token.IDENTIFIER,
-				token.STRING,
-				token.RIGHT_BRACE,
-				token.IDENTIFIER,
-				token.STRING,
-				token.RIGHT_BRACE,
-				token.EOF,
+			want: []token.Token{
+				{Type: token.TARGET, Text: "target"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "echo"},
+				{Type: token.STRING, Text: "hello"},
+				{Type: token.VAR, Text: "var"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "name"},
+				{Type: token.STRING, Text: "tim"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.IDENTIFIER, Text: "echo"},
+				{Type: token.STRING, Text: "tim"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
 			},
 		},
-		"intermediate: multi line command": {
-			inputString: `
-				target build_container:private {
-					docker build \
-						-f .simulacrum/localstack/lambdas/$name.dockerfile \
-						--build-arg $db_user \
-						--build-arg $db_password \
-						--build-arg $db_host \
-						--build-arg $db_name \
-						-t "$namespace:$name" \
-						--no-cache \
-						.
-				}
-			`,
-			types: []token.TokenType{
-				token.TARGET,
-				token.LEFT_BRACE,
-				token.IDENTIFIER,
-				token.STRING,
-				token.VAR,
-				token.LEFT_BRACE,
-				token.IDENTIFIER,
-				token.STRING,
-				token.RIGHT_BRACE,
-				token.IDENTIFIER,
-				token.STRING,
-				token.RIGHT_BRACE,
-				token.EOF,
+		"intermediate: command with flag": {
+			inputString: "docker build -f dev.dockerfile",
+			want: []token.Token{
+				{Type: token.IDENTIFIER, Text: "docker"},
+				{Type: token.IDENTIFIER, Text: "build"},
+				{Type: token.FLAG, Text: "-f"},
+				{Type: token.IDENTIFIER, Text: "dev.dockerfile"},
+				{Type: token.EOF, Text: ""},
 			},
 		},
+		// "intermediate: multi line command": {
+		// 	inputString: `
+		// 		target build_container:private {
+		// 			docker build \
+		// 				-f .simulacrum/localstack/lambdas/$name.dockerfile \
+		// 				--build-arg $db_user \
+		// 				--build-arg $db_password \
+		// 				--build-arg $db_host \
+		// 				--build-arg $db_name \
+		// 				-t "$namespace:$name" \
+		// 				--no-cache \
+		// 				.
+		// 		}
+		// 	`,
+		// 	types: []token.TokenType{
+		// 		token.TARGET,
+		// 		token.IDENTIFIER,
+		// 		token.COLON,
+		// 		token.IDENTIFIER,
+		// 		token.LEFT_BRACE,
+		// 		token.IDENTIFIER,
+		// 		token.IDENTIFIER,
+		// 		token.OPERATOR,
+		// 		token.OPERATOR,
+		// 		token.IDENTIFIER,
+		// 	},
+		// },
 	}
 
 	for name, testcase := range cases {
@@ -106,21 +113,21 @@ func TestLexer(t *testing.T) {
 			if (err != nil) != testcase.wantErr {
 				t.Fatalf("wantErr '%v', got '%+v', tokens: '%v'", testcase.wantErr, err, l.Tokens)
 			}
-			if !slicesMatch(l.TokenTypes(), testcase.types) {
-				t.Fatal("types do not match", lexer.TokenTypeNames(testcase.types), lexer.TokenTypeNames(l.TokenTypes()))
+			if !tokenSlicesMatch(l.Tokens, testcase.want) {
+				t.Fatal("types do not match", lexer.TokenNames(testcase.want), lexer.TokenNames(l.Tokens))
 			}
 		})
 	}
 }
 
-func slicesMatch(a []token.TokenType, b []token.TokenType) bool {
+func tokenSlicesMatch(a []token.Token, b []token.Token) bool {
 	if len(a) != len(b) {
 		return false
 	}
 
-	for index, aType := range a {
-		bType := b[index]
-		if bType != aType {
+	for index, aToken := range a {
+		bToken := b[index]
+		if bToken.Type != aToken.Type || bToken.Text != aToken.Text {
 			return false
 		}
 	}

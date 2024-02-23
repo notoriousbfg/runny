@@ -54,8 +54,21 @@ func (l *Lexer) readChar() error {
 		l.addToken(token.COLON, char)
 	case ",":
 		l.addToken(token.COMMA, char)
-	case "+", "-", "*", "/", `\`, ".", "$":
+	case "-":
+		if l.matchNext("-") {
+			if isAlphaNumeric(l.peekNext()) {
+				l.matchFlag()
+			}
+			l.addToken(token.OPERATOR, "--")
+		} else if isAlphaNumeric(l.peek()) {
+			l.matchFlag()
+		} else {
+			l.addToken(token.OPERATOR, "-")
+		}
+	case "+", "*", "/", `\`, ".":
 		l.addToken(token.OPERATOR, char)
+	case "$":
+		l.matchIdentifier()
 	case "\"":
 		l.matchString()
 	case "\n":
@@ -106,6 +119,13 @@ func (l *Lexer) peek() string {
 		return ""
 	}
 	return string(l.Input[l.Current])
+}
+
+func (l *Lexer) peekNext() string {
+	if l.Current+1 >= len(l.Input) {
+		return ""
+	}
+	return string(l.Input[l.Current+1])
 }
 
 func (l *Lexer) matchString() {
@@ -165,10 +185,25 @@ func (l *Lexer) matchIdentifier() {
 	}
 }
 
-func TokenTypeNames(types []token.TokenType) []string {
+func (l *Lexer) matchFlag() {
+	for isLetter(l.peek()) && !l.isAtEnd() {
+		l.nextChar()
+	}
+	l.addToken(token.FLAG, l.Input[l.Start:l.Current])
+}
+
+func (l *Lexer) matchNext(expected string) bool {
+	if string(l.Input[l.Current]) != expected {
+		return false
+	}
+	l.nextChar()
+	return true
+}
+
+func TokenNames(types []token.Token) []string {
 	var typeNames []string
 	for _, t := range types {
-		typeNames = append(typeNames, token.TokenTypeNames[t])
+		typeNames = append(typeNames, fmt.Sprintf("%s(%s)", token.TokenTypeNames[t.Type], t.Text))
 	}
 	return typeNames
 }
@@ -195,6 +230,7 @@ func isAlphaNumeric(ch string) bool {
 func isAllowedIdentChar(ch string) bool {
 	allowed := map[string]bool{
 		"_": true,
+		".": true,
 	}
 	return allowed[ch]
 }

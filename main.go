@@ -31,7 +31,8 @@ func (r *Runny) Parse() error {
 }
 
 type Config struct {
-	File string
+	Debug bool
+	File  string
 }
 
 func main() {
@@ -40,7 +41,9 @@ func main() {
 	flag.Parse()
 
 	runny := Runny{
-		Config: Config{},
+		Config: Config{
+			Debug: true,
+		},
 	}
 
 	file, err := configFile(fileFlag)
@@ -51,7 +54,11 @@ func main() {
 	runny.Config.File = file
 
 	if err := runny.Scan(); err != nil {
-		fmt.Println("scan error:", err, ", (tokens:", lexer.TokenTypeNames(runny.Lexer.TokenTypes()), ")")
+		if runny.Config.Debug {
+			fmt.Println("scan error:", err, ", (tokens:", lexer.TokenNames(runny.Lexer.Tokens), ")")
+		} else {
+			fmt.Println("scan error:", err)
+		}
 		return
 	}
 
