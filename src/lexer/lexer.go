@@ -44,6 +44,7 @@ func (l *Lexer) readInput() error {
 
 func (l *Lexer) readChar() error {
 	char := l.nextChar()
+
 	switch char {
 	case "{":
 		l.addToken(token.LEFT_BRACE, char)
@@ -53,6 +54,8 @@ func (l *Lexer) readChar() error {
 		l.addToken(token.COLON, char)
 	case ",":
 		l.addToken(token.COMMA, char)
+	case "+", "-", "*", "/", `\`, ".", "$":
+		l.addToken(token.OPERATOR, char)
 	case "\"":
 		l.matchString()
 	case "\n":

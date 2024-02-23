@@ -9,9 +9,10 @@ const (
 	COMMA
 
 	IDENTIFIER
-	ACTION // executable
 	STRING
 	NUMBER
+	OPERATOR
+	COMMENT
 
 	VAR
 	TARGET
@@ -28,9 +29,10 @@ var TokenTypeNames = map[TokenType]string{
 	COMMA:       "COMMA",
 
 	IDENTIFIER: "IDENTIFIER",
-	ACTION:     "ACTION",
 	STRING:     "STRING",
 	NUMBER:     "NUMBER",
+	OPERATOR:   "OPERATOR",
+	COMMENT:    "COMMENT",
 
 	VAR:    "VAR",
 	TARGET: "TARGET",

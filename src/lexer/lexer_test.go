@@ -44,7 +44,8 @@ func TestLexer(t *testing.T) {
 			types: []token.TokenType{
 				token.TARGET,
 				token.LEFT_BRACE,
-				token.ACTION,
+				token.IDENTIFIER,
+				token.STRING,
 				token.RIGHT_BRACE,
 				token.EOF,
 			},
@@ -54,13 +55,45 @@ func TestLexer(t *testing.T) {
 			types: []token.TokenType{
 				token.TARGET,
 				token.LEFT_BRACE,
-				token.ACTION,
+				token.IDENTIFIER,
+				token.STRING,
 				token.VAR,
 				token.LEFT_BRACE,
 				token.IDENTIFIER,
 				token.STRING,
 				token.RIGHT_BRACE,
-				token.ACTION,
+				token.IDENTIFIER,
+				token.STRING,
+				token.RIGHT_BRACE,
+				token.EOF,
+			},
+		},
+		"intermediate: multi line command": {
+			inputString: `
+				target build_container:private {
+					docker build \
+						-f .simulacrum/localstack/lambdas/$name.dockerfile \
+						--build-arg $db_user \
+						--build-arg $db_password \
+						--build-arg $db_host \
+						--build-arg $db_name \
+						-t "$namespace:$name" \
+						--no-cache \
+						.
+				}
+			`,
+			types: []token.TokenType{
+				token.TARGET,
+				token.LEFT_BRACE,
+				token.IDENTIFIER,
+				token.STRING,
+				token.VAR,
+				token.LEFT_BRACE,
+				token.IDENTIFIER,
+				token.STRING,
+				token.RIGHT_BRACE,
+				token.IDENTIFIER,
+				token.STRING,
 				token.RIGHT_BRACE,
 				token.EOF,
 			},
