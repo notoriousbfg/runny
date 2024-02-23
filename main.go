@@ -6,10 +6,12 @@ import (
 	"os"
 	"path/filepath"
 	"runny/src/lexer"
+	"runny/src/parser"
 )
 
 type Runny struct {
-	Lexer  lexer.Lexer
+	Lexer  *lexer.Lexer
+	Parser *parser.Parser
 	Config Config
 }
 
@@ -27,6 +29,7 @@ func (r *Runny) Scan() error {
 }
 
 func (r *Runny) Parse() error {
+	r.Parser = parser.New(r.Lexer.Tokens)
 	return nil
 }
 
@@ -62,7 +65,10 @@ func main() {
 		return
 	}
 
-	fmt.Print(runny.Lexer.Tokens)
+	if err := runny.Parse(); err != nil {
+		fmt.Println("parse error:", err)
+		return
+	}
 }
 
 func configFile(flag string) (string, error) {

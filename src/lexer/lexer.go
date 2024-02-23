@@ -7,7 +7,7 @@ import (
 	"unicode"
 )
 
-func New(input string) (Lexer, error) {
+func New(input string) (*Lexer, error) {
 	lexer := Lexer{
 		Input:   input,
 		Line:    1,
@@ -16,9 +16,9 @@ func New(input string) (Lexer, error) {
 	}
 	err := lexer.readInput()
 	if err != nil {
-		return lexer, err
+		return &lexer, err
 	}
-	return lexer, nil
+	return &lexer, nil
 }
 
 type Lexer struct {
@@ -72,7 +72,7 @@ func (l *Lexer) readChar() error {
 		} else {
 			l.addToken(token.OPERATOR, "-")
 		}
-	case "+", "*", "/", `\`:
+	case "+", "*", "/", "\\", "=":
 		l.addToken(token.OPERATOR, char)
 	case "$":
 		l.matchIdentifier()
