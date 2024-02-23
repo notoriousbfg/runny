@@ -8,6 +8,7 @@ type Statement interface {
 
 type StatementVisitor interface {
 	VisitVariableStatement(stmt VariableStatement) interface{}
+	VisitTargetStatement(stmt TargetStatement) interface{}
 	VisitExpressionStatement(stmt ExpressionStatement) interface{}
 }
 
@@ -22,6 +23,15 @@ type Variable struct {
 
 func (vs VariableStatement) Accept(visitor StatementVisitor) interface{} {
 	return visitor.VisitVariableStatement(vs)
+}
+
+type TargetStatement struct {
+	Name token.Token
+	Body []token.Token
+}
+
+func (ts TargetStatement) Accept(visitor StatementVisitor) interface{} {
+	return visitor.VisitTargetStatement(ts)
 }
 
 type ExpressionStatement struct {

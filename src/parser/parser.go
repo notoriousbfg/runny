@@ -29,7 +29,9 @@ func (p *Parser) declaration() tree.Statement {
 	if p.match(token.VAR) {
 		return p.varDeclaration()
 	}
-
+	if p.match(token.TARGET) {
+		return p.targetDeclaration()
+	}
 	return p.expressionStatement()
 }
 
@@ -51,9 +53,28 @@ func (p *Parser) varDeclaration() tree.Statement {
 		})
 	}
 
-	p.consume(token.RIGHT_BRACE, "expect '}' after block")
+	p.consume(token.RIGHT_BRACE, "expect right brace")
 
 	return varDecl
+}
+
+func (p *Parser) targetDeclaration() tree.Statement {
+	name := p.consume(token.IDENTIFIER, "expect target name")
+
+	p.consume(token.LEFT_BRACE, "expect left brace")
+
+	targetDecl := tree.TargetStatement{
+		Name: name,
+		Body: make([]token.Token, 0),
+	}
+
+	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		targetDecl.Body = append(targetDecl.Body, p.advance())
+	}
+
+	p.consume(token.RIGHT_BRACE, "expect right brace")
+
+	return targetDecl
 }
 
 func (p *Parser) expressionStatement() tree.Statement {

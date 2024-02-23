@@ -62,6 +62,26 @@ func TestStatements(t *testing.T) {
 				},
 			},
 		},
+		"target declaration": {
+			tokens: []token.Token{
+				{Type: token.TARGET, Text: "target"},
+				{Type: token.IDENTIFIER, Text: "hello_cool_person"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "echo"},
+				{Type: token.STRING, Text: "hello tim"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+			want: []tree.Statement{
+				tree.TargetStatement{
+					Name: token.Token{Type: token.IDENTIFIER, Text: "hello_cool_person"},
+					Body: []token.Token{
+						{Type: token.IDENTIFIER, Text: "echo"},
+						{Type: token.STRING, Text: "hello tim"},
+					},
+				},
+			},
+		},
 	}
 
 	for name, testcase := range cases {
