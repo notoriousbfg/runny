@@ -37,6 +37,15 @@ func (r *Runny) Parse() error {
 	return nil
 }
 
+func (r *Runny) Evaluate() error {
+	// r.Parser = parser.New(r.Lexer.Tokens)
+	// err := r.Parser.Parse()
+	// if err != nil {
+	// 	return err
+	// }
+	return nil
+}
+
 type Config struct {
 	Debug bool
 	File  string
@@ -62,16 +71,16 @@ func main() {
 
 	if err := runny.Scan(); err != nil {
 		if runny.Config.Debug {
-			fmt.Println("scan error:", err, ", (tokens:", lexer.TokenNames(runny.Lexer.Tokens), ")")
+			fmt.Print("scan error: ", err, ", (tokens:", lexer.TokenNames(runny.Lexer.Tokens), ")")
 		} else {
-			fmt.Println("scan error:", err)
+			fmt.Print("scan error: ", err)
 		}
 		return
 	}
 
 	// i think we can condense the scan & parse stages into one by using a channel
 	if err := runny.Parse(); err != nil {
-		fmt.Println("parse error:", err)
+		fmt.Print("parse error: ", err)
 		return
 	}
 }

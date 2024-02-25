@@ -55,19 +55,23 @@ func (p *Parser) declaration() tree.Statement {
 func (p *Parser) varDeclaration() tree.Statement {
 	p.consume(token.LEFT_BRACE, "expect left brace")
 
+	p.skipNewline()
+
 	varDecl := tree.VariableStatement{
 		Items: make([]tree.Variable, 0),
 	}
 
 	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
-		if p.check(token.COMMA) {
-			p.advance()
-		}
-
 		varDecl.Items = append(varDecl.Items, tree.Variable{
 			Name:        p.consume(token.IDENTIFIER, "expect variable name"),
 			Initialiser: p.expression(),
 		})
+
+		if p.check(token.COMMA) {
+			p.advance()
+		}
+
+		p.skipNewline()
 	}
 
 	p.consume(token.RIGHT_BRACE, "expect right brace")
@@ -79,6 +83,8 @@ func (p *Parser) targetDeclaration() tree.Statement {
 	name := p.consume(token.IDENTIFIER, "expect target name")
 
 	p.consume(token.LEFT_BRACE, "expect left brace")
+
+	p.skipNewline()
 
 	targetDecl := tree.TargetStatement{
 		Name: name,
@@ -110,6 +116,8 @@ func (p *Parser) runDeclaration() tree.Statement {
 	}
 
 	p.consume(token.LEFT_BRACE, "expect left brace")
+
+	p.skipNewline()
 
 	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
 		if isKeyword(p.peek()) {
@@ -150,7 +158,7 @@ func (p *Parser) expression() tree.Expression {
 		return tree.Literal{Value: p.previous().Text}
 	}
 
-	panic("expect expression")
+	panic(p.error(p.peek(), "expect expression"))
 }
 
 // check that the current token is any of the types and advance if so
@@ -195,11 +203,40 @@ func (p *Parser) consume(tokenType token.TokenType, message string) token.Token 
 		return p.advance()
 	}
 
-	panic(message)
+	panic(p.error(p.peek(), message))
+}
+
+func (p *Parser) skipNewline() {
+	if p.check(token.NEWLINE) {
+		p.advance()
+	}
 }
 
 func (p *Parser) isAtEnd() bool {
 	return p.peek().Type == token.EOF
+}
+
+type ParseError struct {
+	Message string
+}
+
+func (pe *ParseError) Error() string {
+	return pe.Message
+}
+
+func (p *Parser) error(thisToken token.Token, message string) *ParseError {
+	var where string
+	if thisToken.Type == token.EOF {
+		where = "at end"
+	} else if thisToken.Type == token.NEWLINE {
+		where = "at \\n"
+	} else {
+		where = "at '" + thisToken.Text + "'"
+	}
+	err := &ParseError{
+		Message: fmt.Sprintf("[line %d] error %s: %s\n", thisToken.Line, where, message),
+	}
+	return err
 }
 
 func isKeyword(t token.Token) (isKeyword bool) {

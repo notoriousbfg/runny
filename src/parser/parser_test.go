@@ -39,6 +39,29 @@ func TestStatements(t *testing.T) {
 			},
 		},
 		{
+			name: "variable declaration with newline",
+			tokens: []token.Token{
+				{Type: token.VAR, Text: "var"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.NEWLINE, Text: "\\n"},
+				{Type: token.IDENTIFIER, Text: "name"},
+				{Type: token.STRING, Text: "Tim"},
+				{Type: token.NEWLINE, Text: "\\n"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+			want: []tree.Statement{
+				tree.VariableStatement{
+					Items: []tree.Variable{
+						{
+							Name:        token.Token{Type: token.IDENTIFIER, Text: "name"},
+							Initialiser: tree.Literal{Value: "Tim"},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "variable declaration (multiple)",
 			tokens: []token.Token{
 				{Type: token.VAR, Text: "var"},
@@ -48,6 +71,37 @@ func TestStatements(t *testing.T) {
 				{Type: token.COMMA, Text: ","},
 				{Type: token.IDENTIFIER, Text: "foo"},
 				{Type: token.STRING, Text: "bar"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+			want: []tree.Statement{
+				tree.VariableStatement{
+					Items: []tree.Variable{
+						{
+							Name:        token.Token{Type: token.IDENTIFIER, Text: "name"},
+							Initialiser: tree.Literal{Value: "Tim"},
+						},
+						{
+							Name:        token.Token{Type: token.IDENTIFIER, Text: "foo"},
+							Initialiser: tree.Literal{Value: "bar"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "variable declaration (multiple) with newline",
+			tokens: []token.Token{
+				{Type: token.VAR, Text: "var"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.NEWLINE, Text: "\\n"},
+				{Type: token.IDENTIFIER, Text: "name"},
+				{Type: token.STRING, Text: "Tim"},
+				{Type: token.COMMA, Text: ","},
+				{Type: token.NEWLINE, Text: "\\n"},
+				{Type: token.IDENTIFIER, Text: "foo"},
+				{Type: token.STRING, Text: "bar"},
+				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
 			},
