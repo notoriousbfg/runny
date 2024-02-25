@@ -385,6 +385,72 @@ func TestStatements(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "blank newline between declarations",
+			tokens: []token.Token{
+				{Type: token.VAR, Text: "var"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.NEWLINE, Text: "\\n"},
+				{Type: token.IDENTIFIER, Text: "name"},
+				{Type: token.STRING, Text: "tim"},
+				{Type: token.NEWLINE, Text: "\\n"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.NEWLINE, Text: "\\n"},
+				{Type: token.VAR, Text: "var"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.NEWLINE, Text: "\\n"},
+				{Type: token.IDENTIFIER, Text: "foo"},
+				{Type: token.STRING, Text: "bar"},
+				{Type: token.NEWLINE, Text: "\\n"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+			want: []tree.Statement{
+				tree.VariableStatement{
+					Items: []tree.Variable{
+						{
+							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
+							Initialiser: tree.ExpressionStatement{
+								Expression: tree.Literal{Value: "tim"},
+							},
+						},
+					},
+				},
+				tree.VariableStatement{
+					Items: []tree.Variable{
+						{
+							Name: token.Token{Type: token.IDENTIFIER, Text: "foo"},
+							Initialiser: tree.ExpressionStatement{
+								Expression: tree.Literal{Value: "bar"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "variable variable",
+			tokens: []token.Token{
+				{Type: token.VAR, Text: "var"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "name"},
+				{Type: token.STRING, Text: "$tim"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+			want: []tree.Statement{
+				tree.VariableStatement{
+					Items: []tree.Variable{
+						{
+							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
+							Initialiser: tree.ExpressionStatement{
+								Expression: tree.Literal{Value: "$tim"},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, testcase := range cases {

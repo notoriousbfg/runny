@@ -3,7 +3,7 @@ var {
 	mysql_root_password "root"
 }
 
-target build_container:private {
+target build_container {
     docker build \
 		-f .simulacrum/localstack/lambdas/$name.dockerfile \
 		--build-arg $db_user \

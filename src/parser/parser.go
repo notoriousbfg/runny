@@ -40,14 +40,22 @@ func (p *Parser) Parse() (err error) {
 }
 
 func (p *Parser) declaration() tree.Statement {
+	var statement tree.Statement
 	if p.match(token.VAR) {
-		return p.varDeclaration()
+		statement = p.varDeclaration()
 	}
 	if p.match(token.TARGET) {
-		return p.targetDeclaration()
+		statement = p.targetDeclaration()
 	}
 	if p.match(token.RUN) {
-		return p.runDeclaration()
+		statement = p.runDeclaration()
+	}
+	// there could be any number of newlines after a block
+	if statement != nil {
+		for p.check(token.NEWLINE) {
+			p.advance()
+		}
+		return statement
 	}
 	return p.expressionStatement()
 }
@@ -63,11 +71,14 @@ func (p *Parser) varDeclaration() tree.Statement {
 
 	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
 		name := p.consume(token.IDENTIFIER, "expect variable name")
+
 		var initialiser tree.Statement
 		if p.match(token.LEFT_BRACE) {
 			p.skipNewline()
 			initialiser = p.parseBlock() // var is the output of an evaluated block e.g. var name { echo "tim" }
 			p.consume(token.RIGHT_BRACE, "expect right brace")
+		} else if p.match(token.IDENTIFIER) {
+			p.advance()
 		} else {
 			initialiser = p.declaration()
 		}
@@ -85,10 +96,6 @@ func (p *Parser) varDeclaration() tree.Statement {
 	}
 
 	p.consume(token.RIGHT_BRACE, "expect right brace")
-
-	p.skipNewline()
-
-	fmt.Printf("%+v\n", p.peek())
 
 	return varDecl
 }
@@ -246,7 +253,7 @@ func (p *Parser) error(thisToken token.Token, message string) *ParseError {
 	if thisToken.Type == token.EOF {
 		where = "at end"
 	} else if thisToken.Type == token.NEWLINE {
-		where = "at \\n"
+		where = "at '\\n'"
 	} else {
 		where = "at '" + thisToken.Text + "'"
 	}
