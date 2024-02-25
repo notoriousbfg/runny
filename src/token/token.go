@@ -9,6 +9,7 @@ const (
 	RIGHT_BRACE
 	COLON
 	COMMA
+	BACKTICK
 
 	IDENTIFIER
 	STRING
@@ -30,6 +31,7 @@ var TokenTypeNames = map[TokenType]string{
 	RIGHT_BRACE: "RIGHT_BRACE",
 	COLON:       "COLON",
 	COMMA:       "COMMA",
+	BACKTICK:    "BACKTICK",
 
 	IDENTIFIER: "IDENTIFIER",
 	STRING:     "STRING",
