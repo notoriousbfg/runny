@@ -10,6 +10,7 @@ type StatementVisitor interface {
 	VisitVariableStatement(stmt VariableStatement) interface{}
 	VisitTargetStatement(stmt TargetStatement) interface{}
 	VisitActionStatement(stmt ActionStatement) interface{}
+	VisitRunStatement(stmt RunStatement) interface{}
 	VisitExpressionStatement(stmt ExpressionStatement) interface{}
 }
 
@@ -41,6 +42,15 @@ type ActionStatement struct {
 
 func (as ActionStatement) Accept(visitor StatementVisitor) interface{} {
 	return visitor.VisitActionStatement(as)
+}
+
+type RunStatement struct {
+	Name *token.Token
+	Body []Statement
+}
+
+func (rs RunStatement) Accept(visitor StatementVisitor) interface{} {
+	return visitor.VisitRunStatement(rs)
 }
 
 type ExpressionStatement struct {

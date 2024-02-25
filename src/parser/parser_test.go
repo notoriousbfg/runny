@@ -180,6 +180,30 @@ func TestStatements(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "run declaration with no target and single action",
+			tokens: []token.Token{
+				{Type: token.RUN, Text: "run"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "echo"},
+				{Type: token.STRING, Text: "hello"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+			want: []tree.Statement{
+				tree.RunStatement{
+					Name: nil,
+					Body: []tree.Statement{
+						tree.ActionStatement{
+							Body: []token.Token{
+								{Type: token.IDENTIFIER, Text: "echo"},
+								{Type: token.STRING, Text: "hello"},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, testcase := range cases {

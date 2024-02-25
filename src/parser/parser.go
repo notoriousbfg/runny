@@ -46,6 +46,9 @@ func (p *Parser) declaration() tree.Statement {
 	if p.match(token.TARGET) {
 		return p.targetDeclaration()
 	}
+	if p.match(token.RUN) {
+		return p.runDeclaration()
+	}
 	return p.expressionStatement()
 }
 
@@ -96,10 +99,38 @@ func (p *Parser) targetDeclaration() tree.Statement {
 	return targetDecl
 }
 
+func (p *Parser) runDeclaration() tree.Statement {
+	runDecl := tree.RunStatement{
+		Body: make([]tree.Statement, 0),
+	}
+
+	fmt.Println(p.peek())
+
+	if p.check(token.IDENTIFIER) {
+		name := p.consume(token.IDENTIFIER, "expect target name")
+		runDecl.Name = &name
+	}
+
+	p.consume(token.LEFT_BRACE, "expect left brace")
+
+	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		if isKeyword(p.peek()) {
+			runDecl.Body = append(runDecl.Body, p.declaration())
+		} else {
+			runDecl.Body = append(runDecl.Body, p.actionStatement())
+		}
+	}
+
+	p.consume(token.RIGHT_BRACE, "expect right brace")
+
+	return runDecl
+}
+
 func (p *Parser) actionStatement() tree.Statement {
 	tokens := make([]token.Token, 0)
 
 	for !isKeyword(p.peek()) && !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		// TODO: newline
 		tokens = append(tokens, p.peek())
 		p.advance()
 	}

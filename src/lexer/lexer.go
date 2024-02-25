@@ -79,6 +79,7 @@ func (l *Lexer) readChar() error {
 	case "\"":
 		l.matchString()
 	case "\n":
+		l.addToken(token.NEWLINE, "\n")
 		l.Line++
 	case " ", "\r", "\t":
 		break
