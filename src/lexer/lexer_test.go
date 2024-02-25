@@ -124,9 +124,7 @@ func TestLexer(t *testing.T) {
 			}`,
 			want: []token.Token{
 				{Type: token.TARGET, Text: "target"},
-				{Type: token.IDENTIFIER, Text: "build_container"},
-				{Type: token.COLON, Text: ":"},
-				{Type: token.IDENTIFIER, Text: "private"},
+				{Type: token.IDENTIFIER, Text: "build_container:private"},
 				{Type: token.LEFT_BRACE, Text: "{"},
 				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.IDENTIFIER, Text: "docker"},
@@ -162,6 +160,20 @@ func TestLexer(t *testing.T) {
 				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.OPERATOR, Text: "."},
 				{Type: token.NEWLINE, Text: "\\n"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+		},
+		// handled by the parser
+		{
+			name:        "intermediate: keyword inside braces",
+			inputString: "var { docker run something }",
+			want: []token.Token{
+				{Type: token.VAR, Text: "var"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "docker"},
+				{Type: token.RUN, Text: "run"},
+				{Type: token.IDENTIFIER, Text: "something"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
 			},

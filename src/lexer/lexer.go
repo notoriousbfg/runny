@@ -13,6 +13,7 @@ func New(input string) (*Lexer, error) {
 		Line:    1,
 		Start:   0,
 		Current: 0,
+		Depth:   0,
 	}
 	err := lexer.readInput()
 	if err != nil {
@@ -27,6 +28,7 @@ type Lexer struct {
 	Start   int
 	Current int
 	Line    int
+	Depth   int // number of braces deep
 }
 
 func (l *Lexer) readInput() error {
@@ -48,8 +50,10 @@ func (l *Lexer) readChar() error {
 	switch char {
 	case "{":
 		l.addToken(token.LEFT_BRACE, char)
+		l.Depth++
 	case "}":
 		l.addToken(token.RIGHT_BRACE, char)
+		l.Depth--
 	case ":":
 		l.addToken(token.COLON, char)
 	case ",":
@@ -107,6 +111,7 @@ func (l *Lexer) addToken(tokenType token.TokenType, text string) {
 		Text:     text,
 		Position: l.Start,
 		Line:     l.Line,
+		Depth:    l.Depth,
 	})
 }
 
@@ -127,13 +132,6 @@ func (l *Lexer) peek() string {
 		return ""
 	}
 	return string(l.Input[l.Current])
-}
-
-func (l *Lexer) peekNext() string {
-	if l.Current+1 >= len(l.Input) {
-		return ""
-	}
-	return string(l.Input[l.Current+1])
 }
 
 func (l *Lexer) matchString() {
@@ -185,6 +183,7 @@ func (l *Lexer) matchIdentifier() {
 	}
 
 	text := l.Input[l.Start:l.Current]
+
 	// var, target, run etc
 	if tokenType, ok := token.Keywords[text]; ok {
 		l.addToken(tokenType, text)
@@ -241,6 +240,7 @@ func isAllowedIdentChar(ch string) bool {
 		".": true,
 		"/": true,
 		"$": true,
+		":": true,
 	}
 	return allowed[ch]
 }

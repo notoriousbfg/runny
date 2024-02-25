@@ -65,6 +65,7 @@ type Token struct {
 	Text     string
 	Position int
 	Line     int
+	Depth    int
 }
 
 func (t Token) String() string {
