@@ -23,13 +23,12 @@ func New(input string) (*Lexer, error) {
 }
 
 type Lexer struct {
-	Input      string
-	Tokens     []token.Token
-	Start      int
-	Current    int
-	Line       int
-	Depth      int  // number of braces deep
-	ContextRaw bool // when within backticks, keywords do not exist
+	Input   string
+	Tokens  []token.Token
+	Start   int
+	Current int
+	Line    int
+	Depth   int // number of braces deep
 }
 
 func (l *Lexer) readInput() error {
@@ -55,9 +54,6 @@ func (l *Lexer) readChar() error {
 	case "}":
 		l.addToken(token.RIGHT_BRACE, char)
 		l.Depth--
-	case "`":
-		l.addToken(token.BACKTICK, "`")
-		l.ContextRaw = !l.ContextRaw
 	case ":":
 		l.addToken(token.COLON, char)
 	case ",":
@@ -84,8 +80,8 @@ func (l *Lexer) readChar() error {
 		l.addToken(token.OPERATOR, char)
 	case "$":
 		l.matchIdentifier()
-	case "\"":
-		l.matchString()
+	case "\"", "`":
+		l.matchString(char)
 	case "\n":
 		l.addToken(token.NEWLINE, "\\n")
 		l.Line++
@@ -138,8 +134,8 @@ func (l *Lexer) peek() string {
 	return string(l.Input[l.Current])
 }
 
-func (l *Lexer) matchString() {
-	for l.peek() != "\"" && !l.isAtEnd() {
+func (l *Lexer) matchString(delimiter string) {
+	for l.peek() != delimiter && !l.isAtEnd() {
 		l.nextChar()
 	}
 	l.nextChar()
@@ -189,7 +185,7 @@ func (l *Lexer) matchIdentifier() {
 	text := l.Input[l.Start:l.Current]
 
 	// var, target, run etc
-	if tokenType, keywordExists := token.Keywords[text]; keywordExists && !l.ContextRaw {
+	if tokenType, keywordExists := token.Keywords[text]; keywordExists {
 		l.addToken(tokenType, text)
 	} else {
 		l.addToken(token.IDENTIFIER, text)

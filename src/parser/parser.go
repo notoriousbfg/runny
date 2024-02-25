@@ -137,7 +137,7 @@ func (p *Parser) runDeclaration() tree.Statement {
 	p.skipNewline()
 
 	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
-		runDecl.Body = append(runDecl.Body, p.parseBlock())
+		runDecl.Body = append(runDecl.Body, p.declaration())
 	}
 
 	p.consume(token.RIGHT_BRACE, "expect right brace")
@@ -149,6 +149,23 @@ func (p *Parser) actionStatement() tree.Statement {
 	tokens := make([]token.Token, 0)
 
 	for !isKeyword(p.peek()) && !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		if p.check(token.NEWLINE) {
+			p.advance()
+		} else {
+			tokens = append(tokens, p.peek())
+			p.advance()
+		}
+	}
+
+	return tree.ActionStatement{
+		Body: tokens,
+	}
+}
+
+func (p *Parser) rawActionStatement() tree.Statement {
+	tokens := make([]token.Token, 0)
+
+	for !p.check(token.BACKTICK) && !p.isAtEnd() {
 		if p.check(token.NEWLINE) {
 			p.advance()
 		} else {

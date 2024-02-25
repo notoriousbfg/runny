@@ -170,10 +170,7 @@ func TestLexer(t *testing.T) {
 			want: []token.Token{
 				{Type: token.RUN, Text: "run"},
 				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.BACKTICK, Text: "`"},
-				{Type: token.IDENTIFIER, Text: "run"},
-				{Type: token.IDENTIFIER, Text: "something"},
-				{Type: token.BACKTICK, Text: "`"},
+				{Type: token.STRING, Text: "run something"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
 			},
