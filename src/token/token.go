@@ -74,7 +74,7 @@ func (t Token) String() string {
 	switch {
 	case t.Type == EOF:
 		return "EOF"
-	case len(t.Text) > 10:
+	case len(t.Text) > 50:
 		return fmt.Sprintf("%.10q...", t.Text)
 	}
 	return fmt.Sprintf("%q", t.Text)
