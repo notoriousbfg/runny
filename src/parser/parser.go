@@ -104,8 +104,6 @@ func (p *Parser) runDeclaration() tree.Statement {
 		Body: make([]tree.Statement, 0),
 	}
 
-	fmt.Println(p.peek())
-
 	if p.check(token.IDENTIFIER) {
 		name := p.consume(token.IDENTIFIER, "expect target name")
 		runDecl.Name = &name
