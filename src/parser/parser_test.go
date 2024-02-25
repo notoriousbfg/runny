@@ -31,8 +31,10 @@ func TestStatements(t *testing.T) {
 				tree.VariableStatement{
 					Items: []tree.Variable{
 						{
-							Name:        token.Token{Type: token.IDENTIFIER, Text: "name"},
-							Initialiser: tree.Literal{Value: "Tim"},
+							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
+							Initialiser: tree.ExpressionStatement{
+								Expression: tree.Literal{Value: "Tim"},
+							},
 						},
 					},
 				},
@@ -54,8 +56,71 @@ func TestStatements(t *testing.T) {
 				tree.VariableStatement{
 					Items: []tree.Variable{
 						{
-							Name:        token.Token{Type: token.IDENTIFIER, Text: "name"},
-							Initialiser: tree.Literal{Value: "Tim"},
+							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
+							Initialiser: tree.ExpressionStatement{
+								Expression: tree.Literal{Value: "Tim"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "variable declaration block with newlines",
+			tokens: []token.Token{
+				{Type: token.VAR, Text: "var"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "name"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.NEWLINE, Text: "\\n"},
+				{Type: token.IDENTIFIER, Text: "echo"},
+				{Type: token.STRING, Text: "tim"},
+				{Type: token.NEWLINE, Text: "\\n"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.NEWLINE, Text: "\\n"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+			want: []tree.Statement{
+				tree.VariableStatement{
+					Items: []tree.Variable{
+						{
+							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
+							Initialiser: tree.ActionStatement{
+								Body: []token.Token{
+									{Type: token.IDENTIFIER, Text: "echo"},
+									{Type: token.STRING, Text: "tim"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "variable declaration block",
+			tokens: []token.Token{
+				{Type: token.VAR, Text: "var"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "name"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "echo"},
+				{Type: token.STRING, Text: "tim"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+			want: []tree.Statement{
+				tree.VariableStatement{
+					Items: []tree.Variable{
+						{
+							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
+							Initialiser: tree.ActionStatement{
+								Body: []token.Token{
+									{Type: token.IDENTIFIER, Text: "echo"},
+									{Type: token.STRING, Text: "tim"},
+								},
+							},
 						},
 					},
 				},
@@ -78,12 +143,16 @@ func TestStatements(t *testing.T) {
 				tree.VariableStatement{
 					Items: []tree.Variable{
 						{
-							Name:        token.Token{Type: token.IDENTIFIER, Text: "name"},
-							Initialiser: tree.Literal{Value: "Tim"},
+							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
+							Initialiser: tree.ExpressionStatement{
+								Expression: tree.Literal{Value: "Tim"},
+							},
 						},
 						{
-							Name:        token.Token{Type: token.IDENTIFIER, Text: "foo"},
-							Initialiser: tree.Literal{Value: "bar"},
+							Name: token.Token{Type: token.IDENTIFIER, Text: "foo"},
+							Initialiser: tree.ExpressionStatement{
+								Expression: tree.Literal{Value: "bar"},
+							},
 						},
 					},
 				},
@@ -109,12 +178,16 @@ func TestStatements(t *testing.T) {
 				tree.VariableStatement{
 					Items: []tree.Variable{
 						{
-							Name:        token.Token{Type: token.IDENTIFIER, Text: "name"},
-							Initialiser: tree.Literal{Value: "Tim"},
+							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
+							Initialiser: tree.ExpressionStatement{
+								Expression: tree.Literal{Value: "Tim"},
+							},
 						},
 						{
-							Name:        token.Token{Type: token.IDENTIFIER, Text: "foo"},
-							Initialiser: tree.Literal{Value: "bar"},
+							Name: token.Token{Type: token.IDENTIFIER, Text: "foo"},
+							Initialiser: tree.ExpressionStatement{
+								Expression: tree.Literal{Value: "bar"},
+							},
 						},
 					},
 				},
@@ -168,8 +241,10 @@ func TestStatements(t *testing.T) {
 						tree.VariableStatement{
 							Items: []tree.Variable{
 								{
-									Name:        token.Token{Type: token.IDENTIFIER, Text: "name"},
-									Initialiser: tree.Literal{Value: "Tim"},
+									Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
+									Initialiser: tree.ExpressionStatement{
+										Expression: tree.Literal{Value: "Tim"},
+									},
 								},
 							},
 						},
@@ -211,8 +286,10 @@ func TestStatements(t *testing.T) {
 						tree.VariableStatement{
 							Items: []tree.Variable{
 								{
-									Name:        token.Token{Type: token.IDENTIFIER, Text: "name"},
-									Initialiser: tree.Literal{Value: "Tim"},
+									Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
+									Initialiser: tree.ExpressionStatement{
+										Expression: tree.Literal{Value: "Tim"},
+									},
 								},
 							},
 						},
@@ -225,8 +302,10 @@ func TestStatements(t *testing.T) {
 						tree.VariableStatement{
 							Items: []tree.Variable{
 								{
-									Name:        token.Token{Type: token.IDENTIFIER, Text: "foo"},
-									Initialiser: tree.Literal{Value: "bar"},
+									Name: token.Token{Type: token.IDENTIFIER, Text: "foo"},
+									Initialiser: tree.ExpressionStatement{
+										Expression: tree.Literal{Value: "bar"},
+									},
 								},
 							},
 						},
@@ -295,8 +374,10 @@ func TestStatements(t *testing.T) {
 						tree.VariableStatement{
 							Items: []tree.Variable{
 								{
-									Name:        token.Token{Type: token.IDENTIFIER, Text: "name"},
-									Initialiser: tree.Literal{Value: "tim"},
+									Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
+									Initialiser: tree.ExpressionStatement{
+										Expression: tree.Literal{Value: "tim"},
+									},
 								},
 							},
 						},

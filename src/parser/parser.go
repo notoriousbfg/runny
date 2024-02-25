@@ -62,9 +62,19 @@ func (p *Parser) varDeclaration() tree.Statement {
 	}
 
 	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		name := p.consume(token.IDENTIFIER, "expect variable name")
+		var initialiser tree.Statement
+		if p.match(token.LEFT_BRACE) {
+			p.skipNewline()
+			initialiser = p.parseBlock() // var is the output of an evaluated block e.g. var name { echo "tim" }
+			p.consume(token.RIGHT_BRACE, "expect right brace")
+		} else {
+			initialiser = p.declaration()
+		}
+
 		varDecl.Items = append(varDecl.Items, tree.Variable{
-			Name:        p.consume(token.IDENTIFIER, "expect variable name"),
-			Initialiser: p.expression(),
+			Name:        name,
+			Initialiser: initialiser,
 		})
 
 		if p.check(token.COMMA) {
@@ -75,6 +85,10 @@ func (p *Parser) varDeclaration() tree.Statement {
 	}
 
 	p.consume(token.RIGHT_BRACE, "expect right brace")
+
+	p.skipNewline()
+
+	fmt.Printf("%+v\n", p.peek())
 
 	return varDecl
 }
@@ -92,12 +106,8 @@ func (p *Parser) targetDeclaration() tree.Statement {
 	}
 
 	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
-		// anything that isn't a keyword will be parsed as an action
-		if isKeyword(p.peek()) {
-			targetDecl.Body = append(targetDecl.Body, p.declaration())
-		} else {
-			targetDecl.Body = append(targetDecl.Body, p.actionStatement())
-		}
+		targetDecl.Body = append(targetDecl.Body, p.parseBlock())
+		p.skipNewline()
 	}
 
 	p.consume(token.RIGHT_BRACE, "expect right brace")
@@ -120,11 +130,7 @@ func (p *Parser) runDeclaration() tree.Statement {
 	p.skipNewline()
 
 	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
-		if isKeyword(p.peek()) {
-			runDecl.Body = append(runDecl.Body, p.declaration())
-		} else {
-			runDecl.Body = append(runDecl.Body, p.actionStatement())
-		}
+		runDecl.Body = append(runDecl.Body, p.parseBlock())
 	}
 
 	p.consume(token.RIGHT_BRACE, "expect right brace")
@@ -136,13 +142,24 @@ func (p *Parser) actionStatement() tree.Statement {
 	tokens := make([]token.Token, 0)
 
 	for !isKeyword(p.peek()) && !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
-		// TODO: newline
-		tokens = append(tokens, p.peek())
-		p.advance()
+		if p.check(token.NEWLINE) {
+			p.advance()
+		} else {
+			tokens = append(tokens, p.peek())
+			p.advance()
+		}
 	}
 
 	return tree.ActionStatement{
 		Body: tokens,
+	}
+}
+
+func (p *Parser) parseBlock() tree.Statement {
+	if isKeyword(p.peek()) {
+		return p.declaration()
+	} else {
+		return p.actionStatement()
 	}
 }
 

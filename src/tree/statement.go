@@ -1,6 +1,8 @@
 package tree
 
-import "runny/src/token"
+import (
+	"runny/src/token"
+)
 
 type Statement interface {
 	Accept(visitor StatementVisitor) interface{}
@@ -20,7 +22,7 @@ type VariableStatement struct {
 
 type Variable struct {
 	Name        token.Token
-	Initialiser Expression
+	Initialiser Statement
 }
 
 func (vs VariableStatement) Accept(visitor StatementVisitor) interface{} {
