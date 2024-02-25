@@ -30,7 +30,10 @@ func (r *Runny) Scan() error {
 
 func (r *Runny) Parse() error {
 	r.Parser = parser.New(r.Lexer.Tokens)
-	// r.Parser.Parse()
+	err := r.Parser.Parse()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

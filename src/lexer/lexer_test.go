@@ -7,14 +7,16 @@ import (
 )
 
 type TokenCase struct {
+	name        string
 	inputString string
 	want        []token.Token
 	wantErr     bool
 }
 
 func TestLexer(t *testing.T) {
-	cases := map[string]TokenCase{
-		"basic: string variable declaration": {
+	cases := []TokenCase{
+		{
+			name:        "basic: string variable declaration",
 			inputString: "var { hello \"world\" }",
 			want: []token.Token{
 				{Type: token.VAR, Text: "var"},
@@ -25,7 +27,8 @@ func TestLexer(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 		},
-		"basic: multiple string variable declarations": {
+		{
+			name:        "basic: multiple string variable declarations",
 			inputString: "var { hello \"world\", name \"tim\" }",
 			want: []token.Token{
 				{Type: token.VAR, Text: "var"},
@@ -39,7 +42,8 @@ func TestLexer(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 		},
-		"basic: target": {
+		{
+			name:        "basic: target",
 			inputString: "target { echo \"hello\" }",
 			want: []token.Token{
 				{Type: token.TARGET, Text: "target"},
@@ -50,7 +54,8 @@ func TestLexer(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 		},
-		"basic: nested declarations": {
+		{
+			name:        "basic: nested declarations",
 			inputString: "target { echo \"hello\" var { name \"tim\" } echo \"tim\" }",
 			want: []token.Token{
 				{Type: token.TARGET, Text: "target"},
@@ -68,7 +73,8 @@ func TestLexer(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 		},
-		"intermediate: command with flag": {
+		{
+			name:        "intermediate: command with flag",
 			inputString: "docker build -f dev.dockerfile",
 			want: []token.Token{
 				{Type: token.IDENTIFIER, Text: "docker"},
@@ -78,7 +84,8 @@ func TestLexer(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 		},
-		"intermediate: command with double flag": {
+		{
+			name:        "intermediate: command with double flag",
 			inputString: "docker build --f dev.dockerfile",
 			want: []token.Token{
 				{Type: token.IDENTIFIER, Text: "docker"},
@@ -88,7 +95,8 @@ func TestLexer(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 		},
-		"intermediate: multi line command": {
+		{
+			name: "intermediate: multi line command",
 			inputString: `
 				target build_container:private {
 					docker build \
@@ -138,8 +146,8 @@ func TestLexer(t *testing.T) {
 		},
 	}
 
-	for name, testcase := range cases {
-		t.Run(name, func(t *testing.T) {
+	for _, testcase := range cases {
+		t.Run(testcase.name, func(t *testing.T) {
 			l, err := lexer.New(testcase.inputString)
 			if (err != nil) != testcase.wantErr {
 				t.Fatalf("wantErr '%v', got '%+v', tokens: '%v'", testcase.wantErr, err, l.Tokens)

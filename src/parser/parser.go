@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"runny/src/token"
 	"runny/src/tree"
 )
@@ -13,16 +14,29 @@ func New(tokens []token.Token) *Parser {
 }
 
 type Parser struct {
-	Tokens  []token.Token
-	Current int
+	Tokens     []token.Token
+	Current    int
+	Statements []tree.Statement
 }
 
-func (p *Parser) Parse() []tree.Statement {
+func (p *Parser) Parse() (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if str, ok := r.(string); ok {
+				err = fmt.Errorf(str)
+			} else if e, ok := r.(error); ok {
+				err = e
+			} else {
+				err = fmt.Errorf("unknown panic: %v", r)
+			}
+		}
+	}()
 	statements := make([]tree.Statement, 0)
 	for !p.isAtEnd() {
 		statements = append(statements, p.declaration())
 	}
-	return statements
+	p.Statements = statements
+	return nil
 }
 
 func (p *Parser) declaration() tree.Statement {
@@ -65,16 +79,34 @@ func (p *Parser) targetDeclaration() tree.Statement {
 
 	targetDecl := tree.TargetStatement{
 		Name: name,
-		Body: make([]token.Token, 0),
+		Body: make([]tree.Statement, 0),
 	}
 
 	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
-		targetDecl.Body = append(targetDecl.Body, p.advance())
+		// anything that isn't a keyword will be parsed as an action
+		if isKeyword(p.peek()) {
+			targetDecl.Body = append(targetDecl.Body, p.declaration())
+		} else {
+			targetDecl.Body = append(targetDecl.Body, p.actionStatement())
+		}
 	}
 
 	p.consume(token.RIGHT_BRACE, "expect right brace")
 
 	return targetDecl
+}
+
+func (p *Parser) actionStatement() tree.Statement {
+	tokens := make([]token.Token, 0)
+
+	for !isKeyword(p.peek()) && !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+		tokens = append(tokens, p.peek())
+		p.advance()
+	}
+
+	return tree.ActionStatement{
+		Body: tokens,
+	}
 }
 
 func (p *Parser) expressionStatement() tree.Statement {
@@ -139,4 +171,9 @@ func (p *Parser) consume(tokenType token.TokenType, message string) token.Token 
 
 func (p *Parser) isAtEnd() bool {
 	return p.peek().Type == token.EOF
+}
+
+func isKeyword(t token.Token) (isKeyword bool) {
+	_, isKeyword = token.Keywords[t.Text]
+	return
 }
