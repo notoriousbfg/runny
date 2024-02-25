@@ -175,6 +175,17 @@ func TestLexer(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 		},
+		{
+			name:        "intermediate: string containing other strings",
+			inputString: "run { `docker run -d --name \"my-container\" MYSQL_ROOT_PASSWORD=$mysql_root_password` }",
+			want: []token.Token{
+				{Type: token.RUN, Text: "run"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.STRING, Text: "docker run -d --name \"my-container\" MYSQL_ROOT_PASSWORD=$mysql_root_password"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+		},
 	}
 
 	for _, testcase := range cases {
