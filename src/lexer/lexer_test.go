@@ -74,6 +74,20 @@ func TestLexer(t *testing.T) {
 			},
 		},
 		{
+			name:        "basic: run declarations",
+			inputString: "run { echo \"hello\" echo \"tim\" }",
+			want: []token.Token{
+				{Type: token.RUN, Text: "run"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "echo"},
+				{Type: token.STRING, Text: "hello"},
+				{Type: token.IDENTIFIER, Text: "echo"},
+				{Type: token.STRING, Text: "tim"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+		},
+		{
 			name:        "intermediate: command with flag",
 			inputString: "docker build -f dev.dockerfile",
 			want: []token.Token{
