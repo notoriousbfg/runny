@@ -334,7 +334,7 @@ func TestStatements(t *testing.T) {
 			want: []tree.Statement{
 				tree.RunStatement{
 					Name: &token.Token{Type: token.IDENTIFIER, Text: "helloname"},
-					Body: []tree.Statement{},
+					Body: nil,
 				},
 			},
 		},
