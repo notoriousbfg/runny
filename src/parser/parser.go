@@ -168,12 +168,6 @@ func (p *Parser) actionStatement() tree.Statement {
 	tokens := make([]token.Token, 0)
 
 	for !isKeyword(p.peek()) && !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
-		// if p.check(token.NEWLINE) {
-		// 	p.advance()
-		// } else {
-		// 	tokens = append(tokens, p.peek())
-		// 	p.advance()
-		// }
 		tokens = append(tokens, p.peek())
 		p.advance()
 	}
@@ -254,6 +248,11 @@ func (p *Parser) previous() token.Token {
 // get the token at the current index
 func (p *Parser) peek() token.Token {
 	return p.Tokens[p.Current]
+}
+
+// get the token at the next index
+func (p *Parser) next() token.Token {
+	return p.Tokens[p.Current+1]
 }
 
 // if the token is of the specified type advance, otherwise panic

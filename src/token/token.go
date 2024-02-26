@@ -8,6 +8,7 @@ const (
 	LEFT_BRACE TokenType = iota
 	RIGHT_BRACE
 	COLON
+	SEMICOLON
 	COMMA
 	BACKTICK
 
@@ -30,6 +31,7 @@ var TokenTypeNames = map[TokenType]string{
 	LEFT_BRACE:  "LEFT_BRACE",
 	RIGHT_BRACE: "RIGHT_BRACE",
 	COLON:       "COLON",
+	SEMICOLON:   "SEMICOLON",
 	COMMA:       "COMMA",
 	BACKTICK:    "BACKTICK",
 

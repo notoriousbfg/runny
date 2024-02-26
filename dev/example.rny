@@ -7,7 +7,7 @@ run {
 
 	for var in $greeting
 	do
-		echo $var
+		stat $var
 	done
 }
 

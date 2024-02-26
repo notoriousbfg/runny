@@ -56,6 +56,8 @@ func (l *Lexer) readChar() error {
 		l.Depth--
 	case ":":
 		l.addToken(token.COLON, char)
+	case ";":
+		l.addToken(token.SEMICOLON, char)
 	case ",":
 		l.addToken(token.COMMA, char)
 	case ".":

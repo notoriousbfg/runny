@@ -35,7 +35,7 @@ func (i *Interpreter) VisitVariableStatement(stmt tree.VariableStatement) interf
 	for _, variable := range stmt.Items {
 		// evaluate variable now and prevent infinite loop
 		if action, ok := variable.Initialiser.(tree.ActionStatement); ok {
-			stdout := i.runShellCommand(action, nil)
+			stdout := i.runShellCommand(action.String(), nil)
 			variable.Initialiser = tree.ExpressionStatement{
 				Expression: tree.Literal{Value: stdout},
 			}
@@ -59,7 +59,7 @@ func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{
 	for name, variable := range variables {
 		evaluated[name] = i.Accept(variable)
 	}
-	bytes := i.runShellCommand(stmt, evaluated)
+	bytes := i.runShellCommand(stmt.String(), evaluated)
 	fmt.Print(string(bytes))
 	return nil
 }
@@ -93,17 +93,15 @@ func (i *Interpreter) VisitLiteralExpr(expr tree.Literal) interface{} {
 	return expr.Value
 }
 
-func (i *Interpreter) runShellCommand(statement tree.ActionStatement, variables map[string]interface{}) []byte {
-	if len(statement.Body) == 0 {
+func (i *Interpreter) runShellCommand(cmdString string, variables map[string]interface{}) []byte {
+	if len(cmdString) == 0 {
 		return []byte{}
 	}
 
-	cmdString := statement.Body[0].Text
-	for _, token := range statement.Body[1:] {
-		cmdString += (" " + token.Text)
-	}
-
-	fmt.Println(cmdString)
+	// cmdString := statement.Body[0].Text
+	// for _, token := range statement.Body[1:] {
+	// 	cmdString += (" " + token.Text)
+	// }
 
 	cmd := exec.Command("sh", "-c", cmdString)
 	cmd.Env = os.Environ()
