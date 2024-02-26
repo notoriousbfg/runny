@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"runny/src/env"
 	"runny/src/tree"
+	"strings"
 )
 
 func New(statements []tree.Statement) *Interpreter {
@@ -98,18 +99,13 @@ func (i *Interpreter) runShellCommand(cmdString string, variables map[string]int
 		return []byte{}
 	}
 
-	// cmdString := statement.Body[0].Text
-	// for _, token := range statement.Body[1:] {
-	// 	cmdString += (" " + token.Text)
-	// }
-
 	cmd := exec.Command("sh", "-c", cmdString)
 	cmd.Env = os.Environ()
 
 	for name, value := range variables {
 		cmd.Env = append(
 			cmd.Env,
-			fmt.Sprintf("%s=%s", name, value),
+			fmt.Sprintf("%s=%s", name, trimQuotes(value)),
 		)
 	}
 
@@ -117,10 +113,10 @@ func (i *Interpreter) runShellCommand(cmdString string, variables map[string]int
 	return stdOutStdErr
 }
 
-// func trimQuotes(input interface{}) interface{} {
-// 	switch out := input.(type) {
-// 	case string:
-// 		return strings.Trim(out, "\"")
-// 	}
-// 	return input
-// }
+func trimQuotes(input interface{}) interface{} {
+	switch out := input.(type) {
+	case string:
+		return strings.Trim(out, "\"")
+	}
+	return input
+}
