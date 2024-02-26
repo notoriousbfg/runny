@@ -11,13 +11,13 @@ import (
 func New(statements []tree.Statement) *Interpreter {
 	return &Interpreter{
 		Statements:  statements,
-		Environment: *env.NewEnvironment(nil),
+		Environment: env.NewEnvironment(nil),
 	}
 }
 
 type Interpreter struct {
 	Statements  []tree.Statement
-	Environment env.Environment
+	Environment *env.Environment
 }
 
 func (i *Interpreter) Evaluate() (result []interface{}) {
@@ -33,34 +33,40 @@ func (i *Interpreter) Accept(statement tree.Statement) interface{} {
 
 func (i *Interpreter) VisitVariableStatement(stmt tree.VariableStatement) interface{} {
 	for _, variable := range stmt.Items {
-		i.Environment.Define(variable.Name.Text, variable.Initialiser.Accept(i), env.VariableType)
+		i.Environment.DefineVariable(variable.Name.Text, variable.Initialiser)
 	}
-
 	return nil
 }
 
 func (i *Interpreter) VisitTargetStatement(stmt tree.TargetStatement) interface{} {
-	for _, target := range stmt.Body {
-		i.Environment.Define(stmt.Name.Text, target.Accept(i), env.TargetType)
-	}
+	i.Environment.DefineTarget(stmt.Name.Text, stmt.Body)
 	return nil
 }
 
 func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{} {
+	if len(stmt.Body) == 0 {
+		return nil
+	}
+	i.runShellCommand(stmt)
 	return nil
 }
 
 func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
-	// TODO: running specific target
-	for _, statement := range stmt.Body {
-		switch statementType := statement.(type) {
-		case tree.VariableStatement:
-			// define scoped vars
-		case tree.ActionStatement:
-			i.runShellCommand(statementType)
-		case tree.RunStatement:
-			i.VisitRunStatement(statementType)
+	body := stmt.Body
+
+	if stmt.Name != nil {
+		targetBody, err := i.Environment.GetTarget(stmt.Name.Text)
+		if err != nil {
+			panic(err)
 		}
+		body = append(body, targetBody...)
+	}
+
+	for _, statement := range body {
+		if _, ok := statement.(tree.VariableStatement); ok {
+			i.Environment = env.NewEnvironment(i.Environment)
+		}
+		i.Accept(statement)
 	}
 
 	return nil
@@ -91,10 +97,10 @@ func (i *Interpreter) runShellCommand(statement tree.ActionStatement) {
 	for name, value := range variables {
 		cmd.Env = append(
 			cmd.Env,
-			fmt.Sprintf("%s=%s", name, value),
+			fmt.Sprintf("%s=%s", name, value.Accept(i)),
 		)
 	}
 
 	stdOutStdErr, _ := cmd.CombinedOutput()
-	fmt.Println(string(stdOutStdErr))
+	fmt.Print(string(stdOutStdErr))
 }

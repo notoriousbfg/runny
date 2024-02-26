@@ -1,9 +1,18 @@
 var {
-	default_namespace "my-project",
-	mysql_root_password "root"
+	name "Tim"
+}
+
+target hello_name {
+	echo "hello $name"
 }
 
 run {
-	echo $default_namespace
+	echo "hello John"
+}
+run hello_name {}
+run hello_name {
+	var {
+		name "James"
+	}
 }
 

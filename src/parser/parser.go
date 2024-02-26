@@ -130,6 +130,8 @@ func (p *Parser) runDeclaration() tree.Statement {
 	if p.check(token.IDENTIFIER) {
 		name := p.consume(token.IDENTIFIER, "expect target name")
 		runDecl.Name = &name
+
+		// TODO: make braces optional
 	}
 
 	p.consume(token.LEFT_BRACE, "expect left brace")
