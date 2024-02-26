@@ -52,9 +52,9 @@ func (i *Interpreter) VisitTargetStatement(stmt tree.TargetStatement) interface{
 }
 
 func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{} {
-	if len(stmt.Body) == 0 {
-		return nil
-	}
+	// if len(stmt.Body) == 0 {
+	// 	return nil
+	// }
 	evaluated := make(map[string]interface{}, 0)
 	variables := i.Environment.GetAll(env.VariableType)
 	for name, variable := range variables {

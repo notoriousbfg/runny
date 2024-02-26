@@ -19,23 +19,6 @@ type Parser struct {
 	Statements []tree.Statement
 }
 
-func (p *Parser) SanitiseKeywords() {
-	tokens := p.Tokens
-	for !p.isAtEnd() {
-		current := p.peek()
-		if isKeyword(current) {
-			if !p.checkSequence(current.Type, token.LEFT_BRACE) && !p.checkSequence(current.Type, token.IDENTIFIER, token.LEFT_BRACE) {
-				newToken := current
-				newToken.Type = token.IDENTIFIER
-				tokens[p.Current] = newToken
-			}
-		}
-		p.advance()
-	}
-	p.Tokens = tokens
-	p.Current = 0
-}
-
 func (p *Parser) Parse() (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -93,6 +76,7 @@ func (p *Parser) varDeclaration() tree.Statement {
 		if p.match(token.LEFT_BRACE) {
 			p.skipNewline()
 			initialiser = p.parseBlock() // var is the output of an evaluated block e.g. var name { echo "tim" }
+			p.skipNewline()
 			p.consume(token.RIGHT_BRACE, "expect right brace")
 		} else if p.match(token.IDENTIFIER) {
 			p.advance()
@@ -140,15 +124,12 @@ func (p *Parser) targetDeclaration() tree.Statement {
 }
 
 func (p *Parser) runDeclaration() tree.Statement {
-	runDecl := tree.RunStatement{
-		Body: make([]tree.Statement, 0),
-	}
+	runDecl := tree.RunStatement{}
 
 	if p.check(token.IDENTIFIER) {
 		name := p.consume(token.IDENTIFIER, "expect target name")
 		runDecl.Name = &name
-
-		// TODO: make braces optional
+		// TODO: no braces
 	}
 
 	p.consume(token.LEFT_BRACE, "expect left brace")
@@ -165,15 +146,10 @@ func (p *Parser) runDeclaration() tree.Statement {
 }
 
 func (p *Parser) actionStatement() tree.Statement {
-	tokens := make([]token.Token, 0)
-
-	for !isKeyword(p.peek()) && !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
-		tokens = append(tokens, p.peek())
-		p.advance()
-	}
+	script := p.consume(token.SCRIPT, "expect action body")
 
 	return tree.ActionStatement{
-		Body: tokens,
+		Body: script,
 	}
 }
 

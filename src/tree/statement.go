@@ -1,9 +1,7 @@
 package tree
 
 import (
-	"fmt"
 	"runny/src/token"
-	"strings"
 )
 
 type Statement interface {
@@ -41,24 +39,25 @@ func (ts TargetStatement) Accept(visitor StatementVisitor) interface{} {
 }
 
 type ActionStatement struct {
-	Body []token.Token
+	Body token.Token
 }
 
 func (as ActionStatement) Accept(visitor StatementVisitor) interface{} {
 	return visitor.VisitActionStatement(as)
 }
 
-func (as ActionStatement) String() string {
-	var builder strings.Builder
-	for _, t := range as.Body {
-		if t.Type == token.NEWLINE {
-			builder.WriteString("\n")
-		} else {
-			builder.WriteString(fmt.Sprintf(" %s", t.Text))
-		}
-	}
-	return builder.String()
-}
+// func (as ActionStatement) String() string {
+// 	// var builder strings.Builder
+// 	// for _, t := range as.Body {
+// 	// 	if t.Type == token.NEWLINE {
+// 	// 		builder.WriteString("\n")
+// 	// 	} else {
+// 	// 		builder.WriteString(fmt.Sprintf(" %s", t.Text))
+// 	// 	}
+// 	// }
+// 	// return builder.String()
+// 	return as.Body.Text
+// }
 
 type RunStatement struct {
 	Name *token.Token

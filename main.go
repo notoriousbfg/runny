@@ -32,10 +32,6 @@ func (r *Runny) Scan() error {
 
 func (r *Runny) Parse() error {
 	r.Parser = parser.New(r.Lexer.Tokens)
-
-	// do first pass of tokens, ensuring that keywords are in fact keywords by matching sequences
-	r.Parser.SanitiseKeywords()
-
 	err := r.Parser.Parse()
 	if err != nil {
 		return err
@@ -81,10 +77,10 @@ func main() {
 	}
 
 	// i think we can condense the scan & parse stages into one by using a channel
-	// if err := runny.Parse(); err != nil {
-	// 	fmt.Print("parse error: ", err)
-	// 	return
-	// }
+	if err := runny.Parse(); err != nil {
+		fmt.Print("parse error: ", err)
+		return
+	}
 
 	// runny.Evaluate()
 }

@@ -73,8 +73,7 @@ func TestStatements(t *testing.T) {
 				{Type: token.IDENTIFIER, Text: "name"},
 				{Type: token.LEFT_BRACE, Text: "{"},
 				{Type: token.NEWLINE, Text: "\\n"},
-				{Type: token.IDENTIFIER, Text: "echo"},
-				{Type: token.STRING, Text: "tim"},
+				{Type: token.SCRIPT, Text: `echo "tim"`},
 				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.NEWLINE, Text: "\\n"},
@@ -87,10 +86,7 @@ func TestStatements(t *testing.T) {
 						{
 							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
 							Initialiser: tree.ActionStatement{
-								Body: []token.Token{
-									{Type: token.IDENTIFIER, Text: "echo"},
-									{Type: token.STRING, Text: "tim"},
-								},
+								Body: token.Token{Type: token.SCRIPT, Text: `echo "tim"`},
 							},
 						},
 					},
@@ -104,8 +100,7 @@ func TestStatements(t *testing.T) {
 				{Type: token.LEFT_BRACE, Text: "{"},
 				{Type: token.IDENTIFIER, Text: "name"},
 				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.IDENTIFIER, Text: "echo"},
-				{Type: token.STRING, Text: "tim"},
+				{Type: token.SCRIPT, Text: `echo "tim"`},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
@@ -116,10 +111,7 @@ func TestStatements(t *testing.T) {
 						{
 							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
 							Initialiser: tree.ActionStatement{
-								Body: []token.Token{
-									{Type: token.IDENTIFIER, Text: "echo"},
-									{Type: token.STRING, Text: "tim"},
-								},
+								Body: token.Token{Type: token.SCRIPT, Text: `echo "tim"`},
 							},
 						},
 					},
@@ -199,8 +191,7 @@ func TestStatements(t *testing.T) {
 				{Type: token.TARGET, Text: "target"},
 				{Type: token.IDENTIFIER, Text: "hello_cool_person"},
 				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.IDENTIFIER, Text: "echo"},
-				{Type: token.STRING, Text: "hello tim"},
+				{Type: token.SCRIPT, Text: `echo "hello tim"`},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
 			},
@@ -209,10 +200,7 @@ func TestStatements(t *testing.T) {
 					Name: token.Token{Type: token.IDENTIFIER, Text: "hello_cool_person"},
 					Body: []tree.Statement{
 						tree.ActionStatement{
-							Body: []token.Token{
-								{Type: token.IDENTIFIER, Text: "echo"},
-								{Type: token.STRING, Text: "hello tim"},
-							},
+							Body: token.Token{Type: token.SCRIPT, Text: `echo "hello tim"`},
 						},
 					},
 				},
@@ -229,8 +217,7 @@ func TestStatements(t *testing.T) {
 				{Type: token.IDENTIFIER, Text: "name"},
 				{Type: token.STRING, Text: "Tim"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.IDENTIFIER, Text: "echo"},
-				{Type: token.STRING, Text: "hello $name"},
+				{Type: token.SCRIPT, Text: `echo "hello $name"`},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
 			},
@@ -249,17 +236,14 @@ func TestStatements(t *testing.T) {
 							},
 						},
 						tree.ActionStatement{
-							Body: []token.Token{
-								{Type: token.IDENTIFIER, Text: "echo"},
-								{Type: token.STRING, Text: "hello $name"},
-							},
+							Body: token.Token{Type: token.SCRIPT, Text: `echo "hello $name"`},
 						},
 					},
 				},
 			},
 		},
 		{
-			name: "target declaration with action sandwiched between var declarations",
+			name: "target declaration with run sandwiched between var declarations",
 			tokens: []token.Token{
 				{Type: token.TARGET, Text: "target"},
 				{Type: token.IDENTIFIER, Text: "hello_cool_person"},
@@ -269,8 +253,10 @@ func TestStatements(t *testing.T) {
 				{Type: token.IDENTIFIER, Text: "name"},
 				{Type: token.STRING, Text: "Tim"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.IDENTIFIER, Text: "echo"},
-				{Type: token.STRING, Text: "hello $name"},
+				{Type: token.RUN, Text: "run"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.SCRIPT, Text: `echo "hello $name"`},
+				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.VAR, Text: "var"},
 				{Type: token.LEFT_BRACE, Text: "{"},
 				{Type: token.IDENTIFIER, Text: "foo"},
@@ -293,10 +279,11 @@ func TestStatements(t *testing.T) {
 								},
 							},
 						},
-						tree.ActionStatement{
-							Body: []token.Token{
-								{Type: token.IDENTIFIER, Text: "echo"},
-								{Type: token.STRING, Text: "hello $name"},
+						tree.RunStatement{
+							Body: []tree.Statement{
+								tree.ActionStatement{
+									Body: token.Token{Type: token.SCRIPT, Text: `echo "hello $name"`},
+								},
 							},
 						},
 						tree.VariableStatement{
@@ -314,12 +301,11 @@ func TestStatements(t *testing.T) {
 			},
 		},
 		{
-			name: "run declaration with no target and single action",
+			name: "run declaration with no target",
 			tokens: []token.Token{
 				{Type: token.RUN, Text: "run"},
 				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.IDENTIFIER, Text: "echo"},
-				{Type: token.STRING, Text: "hello"},
+				{Type: token.SCRIPT, Text: `echo "hello"`},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
 			},
@@ -328,10 +314,7 @@ func TestStatements(t *testing.T) {
 					Name: nil,
 					Body: []tree.Statement{
 						tree.ActionStatement{
-							Body: []token.Token{
-								{Type: token.IDENTIFIER, Text: "echo"},
-								{Type: token.STRING, Text: "hello"},
-							},
+							Body: token.Token{Type: token.SCRIPT, Text: `echo "hello"`},
 						},
 					},
 				},
@@ -456,19 +439,17 @@ func TestStatements(t *testing.T) {
 			tokens: []token.Token{
 				{Type: token.RUN, Text: "run"},
 				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.IDENTIFIER, Text: "run"},
-				{Type: token.STRING, Text: "something"},
+				{Type: token.SCRIPT, Text: `run something`},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
 			},
 			want: []tree.Statement{
 				tree.RunStatement{
-					Name: nil,
 					Body: []tree.Statement{
 						tree.ActionStatement{
-							Body: []token.Token{
-								{Type: token.IDENTIFIER, Text: "run"},
-								{Type: token.STRING, Text: "something"},
+							Body: token.Token{
+								Type: token.SCRIPT,
+								Text: "run something",
 							},
 						},
 					},
@@ -485,6 +466,11 @@ func TestStatements(t *testing.T) {
 				t.Fatalf("wantErr '%v', got '%+v', statements: '%v'", testcase.wantErr, err, p.Statements)
 			}
 			if !reflect.DeepEqual(testcase.want, p.Statements) {
+				// wantJson, _ := json.Marshal(testcase.want)
+				// stmtJson, _ := json.Marshal(p.Statements)
+				// fmt.Println(wantJson)
+				// fmt.Println(stmtJson)
+
 				t.Fatalf("expressions do not match: expected: %+v, actual: %+v", testcase.want, p.Statements)
 			}
 		})
