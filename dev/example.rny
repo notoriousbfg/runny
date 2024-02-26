@@ -1,18 +1,10 @@
-var {
-	name "Tim"
+target docker_build {
+	`echo ${mycontainer}`
 }
 
-target hello_name {
-	echo "hello $name"
-}
-
-run {
-	echo "hello John"
-}
-run hello_name {}
-run hello_name {
+run docker_build {
 	var {
-		name "James"
+		mycontainer "hello"
 	}
 }
 
