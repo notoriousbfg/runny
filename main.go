@@ -32,6 +32,10 @@ func (r *Runny) Scan() error {
 
 func (r *Runny) Parse() error {
 	r.Parser = parser.New(r.Lexer.Tokens)
+
+	// do first pass of tokens, ensuring that keywords are in fact keywords by matching sequences
+	r.Parser.SanitiseKeywords()
+
 	err := r.Parser.Parse()
 	if err != nil {
 		return err

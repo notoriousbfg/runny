@@ -19,6 +19,23 @@ type Parser struct {
 	Statements []tree.Statement
 }
 
+func (p *Parser) SanitiseKeywords() {
+	tokens := p.Tokens
+	for !p.isAtEnd() {
+		current := p.peek()
+		if isKeyword(current) {
+			if !p.checkSequence(current.Type, token.LEFT_BRACE) && !p.checkSequence(current.Type, token.IDENTIFIER, token.LEFT_BRACE) {
+				newToken := current
+				newToken.Type = token.IDENTIFIER
+				tokens[p.Current] = newToken
+			}
+		}
+		p.advance()
+	}
+	p.Tokens = tokens
+	p.Current = 0
+}
+
 func (p *Parser) Parse() (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -151,12 +168,14 @@ func (p *Parser) actionStatement() tree.Statement {
 	tokens := make([]token.Token, 0)
 
 	for !isKeyword(p.peek()) && !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
-		if p.check(token.NEWLINE) {
-			p.advance()
-		} else {
-			tokens = append(tokens, p.peek())
-			p.advance()
-		}
+		// if p.check(token.NEWLINE) {
+		// 	p.advance()
+		// } else {
+		// 	tokens = append(tokens, p.peek())
+		// 	p.advance()
+		// }
+		tokens = append(tokens, p.peek())
+		p.advance()
 	}
 
 	return tree.ActionStatement{
@@ -206,9 +225,18 @@ func (p *Parser) check(tokenType token.TokenType) bool {
 	return p.peek().Type == tokenType
 }
 
-// get the previous token
-func (p *Parser) previous() token.Token {
-	return p.Tokens[p.Current-1]
+func (p *Parser) checkSequence(tokenTypes ...token.TokenType) bool {
+	start := p.Current
+	defer func() {
+		p.Current = start
+	}()
+	for _, tokenType := range tokenTypes {
+		if !p.check(tokenType) {
+			return false
+		}
+		p.advance()
+	}
+	return true
 }
 
 func (p *Parser) advance() token.Token {
@@ -216,6 +244,11 @@ func (p *Parser) advance() token.Token {
 		p.Current++
 	}
 	return p.previous()
+}
+
+// get the previous token
+func (p *Parser) previous() token.Token {
+	return p.Tokens[p.Current-1]
 }
 
 // get the token at the current index
@@ -265,7 +298,11 @@ func (p *Parser) error(thisToken token.Token, message string) *ParseError {
 	return err
 }
 
-func isKeyword(t token.Token) (isKeyword bool) {
-	_, isKeyword = token.Keywords[t.Text]
-	return
+func isKeyword(t token.Token) bool {
+	for _, keyword := range token.Keywords {
+		if t.Type == keyword {
+			return true
+		}
+	}
+	return false
 }

@@ -2,7 +2,6 @@ package interpreter
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"runny/src/env"
@@ -104,6 +103,8 @@ func (i *Interpreter) runShellCommand(statement tree.ActionStatement, variables 
 		cmdString += (" " + token.Text)
 	}
 
+	fmt.Println(cmdString)
+
 	cmd := exec.Command("sh", "-c", cmdString)
 	cmd.Env = os.Environ()
 
@@ -116,17 +117,6 @@ func (i *Interpreter) runShellCommand(statement tree.ActionStatement, variables 
 
 	stdOutStdErr, _ := cmd.CombinedOutput()
 	return stdOutStdErr
-}
-
-func captureStdout(stdout func()) string {
-	rescueStdout := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-	stdout()
-	w.Close()
-	out, _ := io.ReadAll(r)
-	os.Stdout = rescueStdout
-	return string(out)
 }
 
 // func trimQuotes(input interface{}) interface{} {

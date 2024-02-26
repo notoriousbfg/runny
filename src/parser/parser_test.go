@@ -451,6 +451,30 @@ func TestStatements(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "run is not a keyword",
+			tokens: []token.Token{
+				{Type: token.RUN, Text: "run"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "run"},
+				{Type: token.STRING, Text: "something"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+			want: []tree.Statement{
+				tree.RunStatement{
+					Name: nil,
+					Body: []tree.Statement{
+						tree.ActionStatement{
+							Body: []token.Token{
+								{Type: token.IDENTIFIER, Text: "run"},
+								{Type: token.STRING, Text: "something"},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, testcase := range cases {
