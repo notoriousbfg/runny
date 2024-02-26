@@ -20,6 +20,7 @@ const (
 	RUN
 
 	NEWLINE
+	NONE
 	EOF
 )
 
@@ -39,6 +40,7 @@ var TokenTypeNames = map[TokenType]string{
 	RUN:    "RUN",
 
 	NEWLINE: "NEWLINE",
+	NONE:    "NONE",
 	EOF:     "EOF",
 }
 

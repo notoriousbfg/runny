@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runny/src/token"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -14,6 +15,7 @@ func New(input string) (*Lexer, error) {
 		Start:   0,
 		Current: 0,
 		Depth:   0,
+		Context: token.NONE,
 	}
 	err := lexer.readInput()
 	if err != nil {
@@ -29,6 +31,7 @@ type Lexer struct {
 	Current int
 	Line    int
 	Depth   int // number of braces deep
+	Context token.TokenType
 }
 
 func (l *Lexer) readInput() error {
@@ -51,6 +54,9 @@ func (l *Lexer) readChar() error {
 	case "{":
 		l.addToken(token.LEFT_BRACE, char)
 		l.Depth++
+		if l.Context == token.RUN {
+			l.matchScript()
+		}
 	case "}":
 		l.addToken(token.RIGHT_BRACE, char)
 		l.Depth--
@@ -113,8 +119,9 @@ func (l *Lexer) peek() string {
 }
 
 func (l *Lexer) matchScript() {
-	bracesCount := 0
-	for isAlphaNumeric(l.peek()) && !l.isAtEnd() {
+	start := l.Start + 1
+	bracesCount := 1
+	for !l.isAtEnd() {
 		l.nextChar()
 		if l.peek() == "{" {
 			bracesCount++
@@ -125,8 +132,8 @@ func (l *Lexer) matchScript() {
 			}
 		}
 	}
-	text := l.Input[l.Start:l.Current]
-	l.addToken(token.SCRIPT, text)
+	text := l.Input[start:l.Current]
+	l.addToken(token.SCRIPT, strings.TrimSpace(text))
 }
 
 func (l *Lexer) matchString(delimiter string) {
@@ -149,10 +156,7 @@ func (l *Lexer) matchIdentifier() {
 	identifier := l.readIdentifier()
 	if keyword, isKeyword := token.Keywords[identifier]; isKeyword {
 		l.addToken(keyword, identifier)
-		if keyword == token.RUN {
-			l.skipTo("{")
-			l.matchScript()
-		}
+		l.Context = keyword
 	} else {
 		l.addToken(token.IDENTIFIER, identifier)
 	}
@@ -164,14 +168,6 @@ func (l *Lexer) readIdentifier() string {
 	}
 	text := l.Input[l.Start:l.Current]
 	return text
-}
-
-func (l *Lexer) skipTo(ch string) {
-	for l.peek() != ch && !l.isAtEnd() {
-		l.nextChar()
-	}
-	l.Current++
-	l.Start = l.Current
 }
 
 func TokenNames(types []token.Token) []string {
