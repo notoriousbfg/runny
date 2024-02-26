@@ -56,6 +56,8 @@ func (l *Lexer) readChar() error {
 		l.Depth--
 	case ",":
 		l.addToken(token.COMMA, char)
+	case "$":
+		l.matchIdentifier()
 	case "\n":
 		l.addToken(token.NEWLINE, "\\n")
 		l.Line++
@@ -65,18 +67,7 @@ func (l *Lexer) readChar() error {
 		if isDigit(char) {
 			l.matchNumber()
 		} else if isLetter(char) {
-			identifier := l.readIdentifier()
-			tokenType := l.lookupIdentifier(identifier) // either keyword or identifier
-			if isKeyword(tokenType) {
-				switch tokenType {
-				case token.RUN:
-					l.matchScript()
-				case token.TARGET:
-					l.matchTarget()
-				}
-			} else {
-				l.addToken(token.IDENTIFIER, char)
-			}
+			l.matchIdentifier()
 		} else if char == "`" || char == "\"" {
 			l.matchString(char)
 		} else {
@@ -121,19 +112,21 @@ func (l *Lexer) peek() string {
 	return string(l.Input[l.Current])
 }
 
-func (l *Lexer) peekNext() string {
-	if l.isAtEnd() {
-		return ""
-	}
-	return string(l.Input[l.Current+1])
-}
-
 func (l *Lexer) matchScript() {
-	for !l.isAtEnd() {
+	bracesCount := 0
+	for isAlphaNumeric(l.peek()) && !l.isAtEnd() {
 		l.nextChar()
+		if l.peek() == "{" {
+			bracesCount++
+		} else if l.peek() == "}" {
+			bracesCount--
+			if bracesCount == 0 {
+				break
+			}
+		}
 	}
 	text := l.Input[l.Start:l.Current]
-	fmt.Println(text)
+	l.addToken(token.SCRIPT, text)
 }
 
 func (l *Lexer) matchString(delimiter string) {
@@ -149,47 +142,36 @@ func (l *Lexer) matchNumber() {
 	for isDigit(l.peek()) {
 		l.nextChar()
 	}
-
-	text := l.Input[l.Start:l.Current]
-	l.addToken(token.NUMBER, text)
+	l.addToken(token.NUMBER, l.Input[l.Start:l.Current])
 }
 
-// func (l *Lexer) matchAction() {
-// 	for l.peek() != "}" && !l.isAtEnd() {
-// 		l.nextChar()
-// 	}
-// 	text := l.Input[l.Start:l.Current]
-// 	l.addToken(token.ACTION, text)
-// }
+func (l *Lexer) matchIdentifier() {
+	identifier := l.readIdentifier()
+	if keyword, isKeyword := token.Keywords[identifier]; isKeyword {
+		l.addToken(keyword, identifier)
+		if keyword == token.RUN {
+			l.skipTo("{")
+			l.matchScript()
+		}
+	} else {
+		l.addToken(token.IDENTIFIER, identifier)
+	}
+}
 
 func (l *Lexer) readIdentifier() string {
-	for isAlphaNumeric(l.peek()) && !l.isAtEnd() {
+	for (isAlphaNumeric(l.peek()) || isAllowedIdentChar(l.peek())) && !l.isAtEnd() {
 		l.nextChar()
 	}
 	text := l.Input[l.Start:l.Current]
 	return text
 }
 
-func (l *Lexer) lookupIdentifier(ident string) token.TokenType {
-	if keyword, isKeyword := token.Keywords[ident]; isKeyword {
-		return keyword
+func (l *Lexer) skipTo(ch string) {
+	for l.peek() != ch && !l.isAtEnd() {
+		l.nextChar()
 	}
-	return token.IDENTIFIER
-}
-
-// func (l *Lexer) matchFlag() {
-// 	for (isLetter(l.peek()) || isHyphen(l.peek())) && !l.isAtEnd() {
-// 		l.nextChar()
-// 	}
-// 	l.addToken(token.FLAG, l.Input[l.Start:l.Current])
-// }
-
-func (l *Lexer) matchNext(expected string) bool {
-	if string(l.Input[l.Current]) != expected {
-		return false
-	}
-	l.nextChar()
-	return true
+	l.Current++
+	l.Start = l.Current
 }
 
 func TokenNames(types []token.Token) []string {
@@ -218,7 +200,6 @@ func isAlphaNumeric(ch string) bool {
 	return isDigit(ch) || isLetter(ch)
 }
 
-// is this horrendously verbose?
 func isAllowedIdentChar(ch string) bool {
 	allowed := map[string]bool{
 		"_": true,
@@ -229,17 +210,4 @@ func isAllowedIdentChar(ch string) bool {
 		":": true,
 	}
 	return allowed[ch]
-}
-
-func isHyphen(ch string) bool {
-	return ch == "-"
-}
-
-func isKeyword(tt token.TokenType) bool {
-	for _, keyword := range token.Keywords {
-		if tt == keyword {
-			return true
-		}
-	}
-	return false
 }

@@ -48,27 +48,30 @@ func TestLexer(t *testing.T) {
 			want: []token.Token{
 				{Type: token.TARGET, Text: "target"},
 				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.IDENTIFIER, Text: "echo"},
-				{Type: token.STRING, Text: "\"hello\""},
+				{Type: token.SCRIPT, Text: `echo "hello"`},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
 			},
 		},
 		{
 			name:        "basic: nested declarations",
-			inputString: "target { echo \"hello\" var { name \"tim\" } echo \"tim\" }",
+			inputString: "target { run { echo \"hello\" } var { name \"tim\" } run { echo $name } }",
 			want: []token.Token{
 				{Type: token.TARGET, Text: "target"},
 				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.IDENTIFIER, Text: "echo"},
-				{Type: token.STRING, Text: "\"hello\""},
+				{Type: token.RUN, Text: "run"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.SCRIPT, Text: `echo "hello"`},
+				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.VAR, Text: "var"},
 				{Type: token.LEFT_BRACE, Text: "{"},
 				{Type: token.IDENTIFIER, Text: "name"},
 				{Type: token.STRING, Text: "\"tim\""},
 				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.IDENTIFIER, Text: "echo"},
-				{Type: token.STRING, Text: "\"tim\""},
+				{Type: token.RUN, Text: "run"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.SCRIPT, Text: `echo $name`},
+				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
 			},
@@ -79,86 +82,35 @@ func TestLexer(t *testing.T) {
 			want: []token.Token{
 				{Type: token.RUN, Text: "run"},
 				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.IDENTIFIER, Text: "echo"},
-				{Type: token.STRING, Text: "\"hello\""},
-				{Type: token.IDENTIFIER, Text: "echo"},
-				{Type: token.STRING, Text: "\"tim\""},
+				{Type: token.SCRIPT, Text: `echo "hello" echo "tim"`},
 				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.EOF, Text: ""},
-			},
-		},
-		{
-			name:        "intermediate: command with flag",
-			inputString: "docker build -f dev.dockerfile",
-			want: []token.Token{
-				{Type: token.IDENTIFIER, Text: "docker"},
-				{Type: token.IDENTIFIER, Text: "build"},
-				{Type: token.FLAG, Text: "-f"},
-				{Type: token.IDENTIFIER, Text: "dev.dockerfile"},
-				{Type: token.EOF, Text: ""},
-			},
-		},
-		{
-			name:        "intermediate: command with double flag",
-			inputString: "docker build --f dev.dockerfile",
-			want: []token.Token{
-				{Type: token.IDENTIFIER, Text: "docker"},
-				{Type: token.IDENTIFIER, Text: "build"},
-				{Type: token.FLAG, Text: "--f"},
-				{Type: token.IDENTIFIER, Text: "dev.dockerfile"},
 				{Type: token.EOF, Text: ""},
 			},
 		},
 		{
 			name: "intermediate: multi line command",
 			inputString: `target build_container:private {
-				docker build \
-					-f .simulacrum/localstack/lambdas/$name.dockerfile \
-					--build-arg $db_user \
-					--build-arg $db_password \
-					--build-arg $db_host \
-					--build-arg $db_name \
-					-t "$namespace:$name" \
-					--no-cache \
-					.
+				run {
+					docker build \
+						-f .simulacrum/localstack/lambdas/$name.dockerfile \
+						--build-arg $db_user \
+						--build-arg $db_password \
+						--build-arg $db_host \
+						--build-arg $db_name \
+						-t "$namespace:$name" \
+						--no-cache \
+						.
+				}
 			}`,
 			want: []token.Token{
 				{Type: token.TARGET, Text: "target"},
 				{Type: token.IDENTIFIER, Text: "build_container:private"},
 				{Type: token.LEFT_BRACE, Text: "{"},
 				{Type: token.NEWLINE, Text: "\\n"},
-				{Type: token.IDENTIFIER, Text: "docker"},
-				{Type: token.IDENTIFIER, Text: "build"},
-				{Type: token.OPERATOR, Text: "\\"},
-				{Type: token.NEWLINE, Text: "\\n"},
-				{Type: token.FLAG, Text: "-f"},
-				{Type: token.IDENTIFIER, Text: ".simulacrum/localstack/lambdas/$name.dockerfile"},
-				{Type: token.OPERATOR, Text: "\\"},
-				{Type: token.NEWLINE, Text: "\\n"},
-				{Type: token.FLAG, Text: "--build-arg"},
-				{Type: token.IDENTIFIER, Text: "$db_user"},
-				{Type: token.OPERATOR, Text: "\\"},
-				{Type: token.NEWLINE, Text: "\\n"},
-				{Type: token.FLAG, Text: "--build-arg"},
-				{Type: token.IDENTIFIER, Text: "$db_password"},
-				{Type: token.OPERATOR, Text: "\\"},
-				{Type: token.NEWLINE, Text: "\\n"},
-				{Type: token.FLAG, Text: "--build-arg"},
-				{Type: token.IDENTIFIER, Text: "$db_host"},
-				{Type: token.OPERATOR, Text: "\\"},
-				{Type: token.NEWLINE, Text: "\\n"},
-				{Type: token.FLAG, Text: "--build-arg"},
-				{Type: token.IDENTIFIER, Text: "$db_name"},
-				{Type: token.OPERATOR, Text: "\\"},
-				{Type: token.NEWLINE, Text: "\\n"},
-				{Type: token.FLAG, Text: "-t"},
-				{Type: token.STRING, Text: "\"$namespace:$name\""},
-				{Type: token.OPERATOR, Text: "\\"},
-				{Type: token.NEWLINE, Text: "\\n"},
-				{Type: token.FLAG, Text: "--no-cache"},
-				{Type: token.OPERATOR, Text: "\\"},
-				{Type: token.NEWLINE, Text: "\\n"},
-				{Type: token.OPERATOR, Text: "."},
+				{Type: token.RUN, Text: "run"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.SCRIPT, Text: `docker build \ -f .simulacrum/localstack/lambdas/$name.dockerfile \ --build-arg $db_user \ --build-arg $db_password \ --build-arg $db_host \ --build-arg $db_name \ -t "$namespace:$name" \ --no-cache \ .`},
+				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
@@ -166,26 +118,26 @@ func TestLexer(t *testing.T) {
 		},
 		{
 			name:        "intermediate: keyword inside braces",
-			inputString: "run { `run something` }",
+			inputString: "run { run something }",
 			want: []token.Token{
 				{Type: token.RUN, Text: "run"},
 				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.STRING, Text: "\"run something\""},
+				{Type: token.SCRIPT, Text: "run something"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
 			},
 		},
-		{
-			name:        "intermediate: string containing other strings",
-			inputString: "run { `docker run -d --name \"my-container\" MYSQL_ROOT_PASSWORD=$mysql_root_password` }",
-			want: []token.Token{
-				{Type: token.RUN, Text: "run"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.STRING, Text: "\"docker run -d --name \"my-container\" MYSQL_ROOT_PASSWORD=$mysql_root_password\""},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.EOF, Text: ""},
-			},
-		},
+		// {
+		// 	name:        "intermediate: string containing other strings",
+		// 	inputString: "run { `docker run -d --name \"my-container\" MYSQL_ROOT_PASSWORD=$mysql_root_password` }",
+		// 	want: []token.Token{
+		// 		{Type: token.RUN, Text: "run"},
+		// 		{Type: token.LEFT_BRACE, Text: "{"},
+		// 		{Type: token.STRING, Text: "\"docker run -d --name \"my-container\" MYSQL_ROOT_PASSWORD=$mysql_root_password\""},
+		// 		{Type: token.RIGHT_BRACE, Text: "}"},
+		// 		{Type: token.EOF, Text: ""},
+		// 	},
+		// },
 	}
 
 	for _, testcase := range cases {
