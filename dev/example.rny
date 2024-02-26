@@ -1,10 +1,13 @@
-target docker_build {
-	`echo ${mycontainer}`
-}
-
-run docker_build {
+run {
 	var {
-		mycontainer "hello"
+		greeting {
+			find . -type f -name "*.go"
+		}
 	}
+
+	for var in $greeting
+	do
+		echo $var
+	done
 }
 

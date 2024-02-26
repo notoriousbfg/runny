@@ -140,7 +140,7 @@ func (l *Lexer) matchString(delimiter string) {
 	}
 	l.nextChar()
 	text := l.Input[l.Start+1 : l.Current-1]
-	l.addToken(token.STRING, text)
+	l.addToken(token.STRING, fmt.Sprintf("\"%s\"", text))
 }
 
 func (l *Lexer) matchNumber() {
@@ -237,6 +237,7 @@ func isAlphaNumeric(ch string) bool {
 func isAllowedIdentChar(ch string) bool {
 	allowed := map[string]bool{
 		"_": true,
+		"-": true,
 		".": true,
 		"/": true,
 		"$": true,

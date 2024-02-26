@@ -28,15 +28,7 @@ type Environment struct {
 }
 
 func (e *Environment) DefineVariable(name string, value tree.Statement) {
-	switch typedValue := value.(type) {
-	case tree.ExpressionStatement:
-		e.Values.Variables[name] = typedValue
-		// if e.Enclosing != nil {
-		// 	if _, ok := e.Enclosing.Values.Variables[name]; ok {
-		// 		e.Enclosing.Values.Variables[name] = typedValue
-		// 	}
-		// }
-	}
+	e.Values.Variables[name] = value
 }
 
 func (e *Environment) DefineTarget(name string, value []tree.Statement) {
@@ -48,19 +40,19 @@ func (e *Environment) DefineTarget(name string, value []tree.Statement) {
 	}
 }
 
-func (e *Environment) GetVariable(name string) (tree.Statement, error) {
-	if _, ok := e.Values.Variables[name]; ok {
-		return e.Values.Variables[name], nil
-	}
+// func (e *Environment) GetVariable(name string) (tree.Statement, error) {
+// 	if _, ok := e.Values.Variables[name]; ok {
+// 		return e.Values.Variables[name], nil
+// 	}
 
-	if e.Enclosing != nil {
-		if _, ok := e.Enclosing.Values.Variables[name]; ok {
-			return e.Enclosing.Values.Variables[name], nil
-		}
-	}
+// 	if e.Enclosing != nil {
+// 		if _, ok := e.Enclosing.Values.Variables[name]; ok {
+// 			return e.Enclosing.Values.Variables[name], nil
+// 		}
+// 	}
 
-	return nil, fmt.Errorf("undefined variable '" + name + "'.")
-}
+// 	return nil, fmt.Errorf("undefined variable '" + name + "'.")
+// }
 
 func (e *Environment) GetTarget(name string) ([]tree.Statement, error) {
 	if _, ok := e.Values.Targets[name]; ok {

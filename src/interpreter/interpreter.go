@@ -2,6 +2,7 @@ package interpreter
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"runny/src/env"
@@ -33,6 +34,13 @@ func (i *Interpreter) Accept(statement tree.Statement) interface{} {
 
 func (i *Interpreter) VisitVariableStatement(stmt tree.VariableStatement) interface{} {
 	for _, variable := range stmt.Items {
+		// evaluate variable now and prevent infinite loop
+		if action, ok := variable.Initialiser.(tree.ActionStatement); ok {
+			stdout := i.runShellCommand(action, nil)
+			variable.Initialiser = tree.ExpressionStatement{
+				Expression: tree.Literal{Value: stdout},
+			}
+		}
 		i.Environment.DefineVariable(variable.Name.Text, variable.Initialiser)
 	}
 	return nil
@@ -47,7 +55,13 @@ func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{
 	if len(stmt.Body) == 0 {
 		return nil
 	}
-	i.runShellCommand(stmt)
+	evaluated := make(map[string]interface{}, 0)
+	variables := i.Environment.GetAll(env.VariableType)
+	for name, variable := range variables {
+		evaluated[name] = i.Accept(variable)
+	}
+	bytes := i.runShellCommand(stmt, evaluated)
+	fmt.Print(string(bytes))
 	return nil
 }
 
@@ -80,9 +94,9 @@ func (i *Interpreter) VisitLiteralExpr(expr tree.Literal) interface{} {
 	return expr.Value
 }
 
-func (i *Interpreter) runShellCommand(statement tree.ActionStatement) {
+func (i *Interpreter) runShellCommand(statement tree.ActionStatement, variables map[string]interface{}) []byte {
 	if len(statement.Body) == 0 {
-		return
+		return []byte{}
 	}
 
 	cmdString := statement.Body[0].Text
@@ -93,14 +107,32 @@ func (i *Interpreter) runShellCommand(statement tree.ActionStatement) {
 	cmd := exec.Command("sh", "-c", cmdString)
 	cmd.Env = os.Environ()
 
-	variables := i.Environment.GetAll(env.VariableType)
 	for name, value := range variables {
 		cmd.Env = append(
 			cmd.Env,
-			fmt.Sprintf("%s=%s", name, value.Accept(i)),
+			fmt.Sprintf("%s=%s", name, value),
 		)
 	}
 
 	stdOutStdErr, _ := cmd.CombinedOutput()
-	fmt.Print(string(stdOutStdErr))
+	return stdOutStdErr
 }
+
+func captureStdout(stdout func()) string {
+	rescueStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+	stdout()
+	w.Close()
+	out, _ := io.ReadAll(r)
+	os.Stdout = rescueStdout
+	return string(out)
+}
+
+// func trimQuotes(input interface{}) interface{} {
+// 	switch out := input.(type) {
+// 	case string:
+// 		return strings.Trim(out, "\"")
+// 	}
+// 	return input
+// }
