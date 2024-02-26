@@ -81,12 +81,12 @@ func main() {
 	}
 
 	// i think we can condense the scan & parse stages into one by using a channel
-	if err := runny.Parse(); err != nil {
-		fmt.Print("parse error: ", err)
-		return
-	}
+	// if err := runny.Parse(); err != nil {
+	// 	fmt.Print("parse error: ", err)
+	// 	return
+	// }
 
-	runny.Evaluate()
+	// runny.Evaluate()
 }
 
 func configFile(flag string) (string, error) {

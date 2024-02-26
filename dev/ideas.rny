@@ -2,19 +2,22 @@ var {
 	$name "Tim"
 }
 
-target say_goodbye {
-	echo "goodbye"
-}
-
 target hello_name {
+	var {
+		name $name
+	}
 	run {
 		echo "hello $name"
 	}
-	run say_goodbye {}
 }
 
 run hello_name {
-	var {
-		name "James"
+	var:before {
+		name {
+			echo "James"
+		}
+	}
+	run {
+		echo "hello tim"
 	}
 }

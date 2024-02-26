@@ -54,36 +54,8 @@ func (l *Lexer) readChar() error {
 	case "}":
 		l.addToken(token.RIGHT_BRACE, char)
 		l.Depth--
-	case ":":
-		l.addToken(token.COLON, char)
-	case ";":
-		l.addToken(token.SEMICOLON, char)
 	case ",":
 		l.addToken(token.COMMA, char)
-	case ".":
-		if isAlphaNumeric(l.peek()) || isAllowedIdentChar(l.peek()) {
-			l.matchIdentifier()
-		} else {
-			l.addToken(token.OPERATOR, char)
-		}
-	case "-":
-		if l.matchNext("-") {
-			if isAlphaNumeric(l.peek()) {
-				l.matchFlag()
-			} else {
-				l.addToken(token.OPERATOR, "--")
-			}
-		} else if isAlphaNumeric(l.peek()) {
-			l.matchFlag()
-		} else {
-			l.addToken(token.OPERATOR, "-")
-		}
-	case "+", "*", "/", "\\", "=":
-		l.addToken(token.OPERATOR, char)
-	case "$":
-		l.matchIdentifier()
-	case "\"", "`":
-		l.matchString(char)
 	case "\n":
 		l.addToken(token.NEWLINE, "\\n")
 		l.Line++
@@ -93,7 +65,20 @@ func (l *Lexer) readChar() error {
 		if isDigit(char) {
 			l.matchNumber()
 		} else if isLetter(char) {
-			l.matchIdentifier()
+			identifier := l.readIdentifier()
+			tokenType := l.lookupIdentifier(identifier) // either keyword or identifier
+			if isKeyword(tokenType) {
+				switch tokenType {
+				case token.RUN:
+					l.matchScript()
+				case token.TARGET:
+					l.matchTarget()
+				}
+			} else {
+				l.addToken(token.IDENTIFIER, char)
+			}
+		} else if char == "`" || char == "\"" {
+			l.matchString(char)
 		} else {
 			return fmt.Errorf("unsupported type: %s", char)
 		}
@@ -136,6 +121,21 @@ func (l *Lexer) peek() string {
 	return string(l.Input[l.Current])
 }
 
+func (l *Lexer) peekNext() string {
+	if l.isAtEnd() {
+		return ""
+	}
+	return string(l.Input[l.Current+1])
+}
+
+func (l *Lexer) matchScript() {
+	for !l.isAtEnd() {
+		l.nextChar()
+	}
+	text := l.Input[l.Start:l.Current]
+	fmt.Println(text)
+}
+
 func (l *Lexer) matchString(delimiter string) {
 	for l.peek() != delimiter && !l.isAtEnd() {
 		l.nextChar()
@@ -150,24 +150,7 @@ func (l *Lexer) matchNumber() {
 		l.nextChar()
 	}
 
-	// if l.peek() == "." && isDigit(l.peekNext()) {
-	// 	l.nextChar()
-
-	// 	for isDigit(l.peek()) {
-	// 		l.nextChar()
-	// 	}
-	// }
-
 	text := l.Input[l.Start:l.Current]
-
-	// var val interface{}
-	// if strings.Contains(text, ".") {
-	// 	val, _ = strconv.ParseFloat(text, 64)
-	// } else {
-	// 	intVal, _ := strconv.ParseInt(text, 10, 0)
-	// 	val = int(intVal)
-	// }
-
 	l.addToken(token.NUMBER, text)
 }
 
@@ -179,27 +162,27 @@ func (l *Lexer) matchNumber() {
 // 	l.addToken(token.ACTION, text)
 // }
 
-func (l *Lexer) matchIdentifier() {
-	for (isAlphaNumeric(l.peek()) || isAllowedIdentChar(l.peek())) && !l.isAtEnd() {
+func (l *Lexer) readIdentifier() string {
+	for isAlphaNumeric(l.peek()) && !l.isAtEnd() {
 		l.nextChar()
 	}
-
 	text := l.Input[l.Start:l.Current]
-
-	// var, target, run etc
-	if tokenType, keywordExists := token.Keywords[text]; keywordExists {
-		l.addToken(tokenType, text)
-	} else {
-		l.addToken(token.IDENTIFIER, text)
-	}
+	return text
 }
 
-func (l *Lexer) matchFlag() {
-	for (isLetter(l.peek()) || isHyphen(l.peek())) && !l.isAtEnd() {
-		l.nextChar()
+func (l *Lexer) lookupIdentifier(ident string) token.TokenType {
+	if keyword, isKeyword := token.Keywords[ident]; isKeyword {
+		return keyword
 	}
-	l.addToken(token.FLAG, l.Input[l.Start:l.Current])
+	return token.IDENTIFIER
 }
+
+// func (l *Lexer) matchFlag() {
+// 	for (isLetter(l.peek()) || isHyphen(l.peek())) && !l.isAtEnd() {
+// 		l.nextChar()
+// 	}
+// 	l.addToken(token.FLAG, l.Input[l.Start:l.Current])
+// }
 
 func (l *Lexer) matchNext(expected string) bool {
 	if string(l.Input[l.Current]) != expected {
@@ -250,4 +233,13 @@ func isAllowedIdentChar(ch string) bool {
 
 func isHyphen(ch string) bool {
 	return ch == "-"
+}
+
+func isKeyword(tt token.TokenType) bool {
+	for _, keyword := range token.Keywords {
+		if tt == keyword {
+			return true
+		}
+	}
+	return false
 }
