@@ -122,6 +122,17 @@ func TestLexer(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 		},
+		{
+			name:        "intermediate: run target with no body",
+			inputString: "run mytarget {}",
+			want: []token.Token{
+				{Type: token.RUN, Text: "run"},
+				{Type: token.IDENTIFIER, Text: "mytarget"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+		},
 		// {
 		// 	name:        "intermediate: string containing other strings",
 		// 	inputString: "run { `docker run -d --name \"my-container\" MYSQL_ROOT_PASSWORD=$mysql_root_password` }",

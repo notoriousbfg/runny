@@ -122,8 +122,9 @@ func (l *Lexer) matchScript() {
 	start := l.Start + 1
 	bracesCount := 1
 	for !l.isAtEnd() {
-		l.nextChar()
-		if l.peek() == "{" {
+		if l.peek() == "\n" {
+			l.Line++
+		} else if l.peek() == "{" {
 			bracesCount++
 		} else if l.peek() == "}" {
 			bracesCount--
@@ -131,13 +132,19 @@ func (l *Lexer) matchScript() {
 				break
 			}
 		}
+		l.nextChar()
 	}
 	text := l.Input[start:l.Current]
-	l.addToken(token.SCRIPT, strings.TrimSpace(text))
+	if len(text) > 0 {
+		l.addToken(token.SCRIPT, strings.TrimSpace(text))
+	}
 }
 
 func (l *Lexer) matchString(delimiter string) {
 	for l.peek() != delimiter && !l.isAtEnd() {
+		if l.peek() == "\n" {
+			l.Line++
+		}
 		l.nextChar()
 	}
 	l.nextChar()

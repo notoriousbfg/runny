@@ -36,7 +36,7 @@ func (i *Interpreter) VisitVariableStatement(stmt tree.VariableStatement) interf
 	for _, variable := range stmt.Items {
 		// evaluate variable now and prevent infinite loop
 		if action, ok := variable.Initialiser.(tree.ActionStatement); ok {
-			stdout := i.runShellCommand(action.String(), nil)
+			stdout := i.runShellCommand(action.Body.Text, nil)
 			variable.Initialiser = tree.ExpressionStatement{
 				Expression: tree.Literal{Value: stdout},
 			}
@@ -60,7 +60,7 @@ func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{
 	for name, variable := range variables {
 		evaluated[name] = i.Accept(variable)
 	}
-	bytes := i.runShellCommand(stmt.String(), evaluated)
+	bytes := i.runShellCommand(stmt.Body.Text, evaluated)
 	fmt.Print(string(bytes))
 	return nil
 }
