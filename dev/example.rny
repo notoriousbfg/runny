@@ -1,13 +1,18 @@
-run {
-	var {
-		greeting {
-			find . -type f -name "*.go"
-		}
+var {
+	files {
+		find . -type f -name "*.go"
 	}
+}
 
-	for var in $greeting
+target check-files {
+	for var in $files
 	do
 		stat $var
 	done
 }
 
+run check-files {
+	var {
+		files "go.mod"
+	}
+}
