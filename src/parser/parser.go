@@ -62,7 +62,7 @@ func (p *Parser) declaration() tree.Statement {
 }
 
 func (p *Parser) varDeclaration() tree.Statement {
-	p.consume(token.LEFT_BRACE, "expect left brace")
+	p.consume(token.LEFT_BRACE, "expect left brace before variables")
 
 	depth := p.increaseDepth()
 
@@ -114,7 +114,7 @@ func (p *Parser) varDeclaration() tree.Statement {
 func (p *Parser) targetDeclaration() tree.Statement {
 	name := p.consume(token.IDENTIFIER, "expect target name")
 
-	p.consume(token.LEFT_BRACE, "expect left brace")
+	p.consume(token.LEFT_BRACE, "expect left brace before target body")
 
 	depth := p.increaseDepth()
 
@@ -149,11 +149,18 @@ func (p *Parser) runDeclaration() tree.Statement {
 
 	if p.check(token.IDENTIFIER) {
 		name := p.consume(token.IDENTIFIER, "expect target name")
-		runDecl.Name = &name
-		// TODO: no braces
+		runDecl.Name = name
+
+		fmt.Print(name)
+
+		if !p.check(token.LEFT_BRACE) {
+			return runDecl
+		}
 	}
 
-	p.consume(token.LEFT_BRACE, "expect left brace")
+	p.skipNewline()
+
+	p.consume(token.LEFT_BRACE, "expect left brace before run body")
 
 	depth := p.increaseDepth()
 
@@ -161,13 +168,15 @@ func (p *Parser) runDeclaration() tree.Statement {
 
 	for !p.isAtEnd() {
 		runDecl.Body = append(runDecl.Body, p.declaration())
-
 		if p.check(token.RIGHT_BRACE) && depth == p.Depth {
 			break
 		}
 	}
 
 	p.consume(token.RIGHT_BRACE, "expect right brace after run declaration")
+
+	fmt.Println("dsasd")
+	fmt.Println(p.peek())
 
 	p.reduceDepth()
 

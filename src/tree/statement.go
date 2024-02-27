@@ -60,7 +60,7 @@ func (as ActionStatement) Accept(visitor StatementVisitor) interface{} {
 // }
 
 type RunStatement struct {
-	Name *token.Token
+	Name token.Token
 	Body []Statement
 }
 

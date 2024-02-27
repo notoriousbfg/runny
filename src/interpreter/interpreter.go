@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"runny/src/env"
+	"runny/src/token"
 	"runny/src/tree"
 	"strings"
 )
@@ -68,7 +69,7 @@ func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{
 func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 	body := stmt.Body
 
-	if stmt.Name != nil {
+	if (stmt.Name != token.Token{}) {
 		targetBody, err := i.Environment.GetTarget(stmt.Name.Text)
 		if err != nil {
 			panic(err)
