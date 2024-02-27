@@ -1,1 +1,7 @@
-run say_goodbye {}
+var {
+    name {
+        run {
+            echo "hello"
+        }
+    }
+}

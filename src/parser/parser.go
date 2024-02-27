@@ -8,14 +8,17 @@ import (
 
 func New(tokens []token.Token) *Parser {
 	return &Parser{
-		Tokens:  tokens,
-		Current: 0,
+		Tokens:     tokens,
+		Current:    0,
+		Depth:      0,
+		Statements: make([]tree.Statement, 0),
 	}
 }
 
 type Parser struct {
 	Tokens     []token.Token
 	Current    int
+	Depth      int
 	Statements []tree.Statement
 }
 
@@ -31,11 +34,9 @@ func (p *Parser) Parse() (err error) {
 			}
 		}
 	}()
-	statements := make([]tree.Statement, 0)
 	for !p.isAtEnd() {
-		statements = append(statements, p.declaration())
+		p.Statements = append(p.Statements, p.declaration())
 	}
-	p.Statements = statements
 	return nil
 }
 
@@ -43,12 +44,12 @@ func (p *Parser) declaration() tree.Statement {
 	var statement tree.Statement
 	if p.match(token.VAR) {
 		statement = p.varDeclaration()
-	}
-	if p.match(token.TARGET) {
+	} else if p.match(token.TARGET) {
 		statement = p.targetDeclaration()
-	}
-	if p.match(token.RUN) {
+	} else if p.match(token.RUN) {
 		statement = p.runDeclaration()
+	} else if p.check(token.SCRIPT) {
+		statement = p.actionStatement()
 	}
 	// there could be any number of newlines after a block
 	if statement != nil {
@@ -63,21 +64,24 @@ func (p *Parser) declaration() tree.Statement {
 func (p *Parser) varDeclaration() tree.Statement {
 	p.consume(token.LEFT_BRACE, "expect left brace")
 
+	depth := p.increaseDepth()
+
 	p.skipNewline()
 
 	varDecl := tree.VariableStatement{
 		Items: make([]tree.Variable, 0),
 	}
 
-	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
+	for !p.isAtEnd() {
 		name := p.consume(token.IDENTIFIER, "expect variable name")
 
 		var initialiser tree.Statement
 		if p.match(token.LEFT_BRACE) {
 			p.skipNewline()
-			initialiser = p.parseBlock() // var is the output of an evaluated block e.g. var name { echo "tim" }
+			fmt.Print(p.peek())
+			initialiser = p.declaration() // var is the output of an evaluated block e.g. var name { echo "tim" }
 			p.skipNewline()
-			p.consume(token.RIGHT_BRACE, "expect right brace")
+			p.consume(token.RIGHT_BRACE, "expect right brace after variable body")
 		} else if p.match(token.IDENTIFIER) {
 			p.advance()
 		} else {
@@ -94,9 +98,15 @@ func (p *Parser) varDeclaration() tree.Statement {
 		}
 
 		p.skipNewline()
+
+		if p.check(token.RIGHT_BRACE) && depth == p.Depth {
+			break
+		}
 	}
 
-	p.consume(token.RIGHT_BRACE, "expect right brace")
+	p.consume(token.RIGHT_BRACE, "expect right brace after variable declaration")
+
+	p.reduceDepth()
 
 	return varDecl
 }
@@ -106,6 +116,8 @@ func (p *Parser) targetDeclaration() tree.Statement {
 
 	p.consume(token.LEFT_BRACE, "expect left brace")
 
+	depth := p.increaseDepth()
+
 	p.skipNewline()
 
 	targetDecl := tree.TargetStatement{
@@ -113,18 +125,27 @@ func (p *Parser) targetDeclaration() tree.Statement {
 		Body: make([]tree.Statement, 0),
 	}
 
-	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
-		targetDecl.Body = append(targetDecl.Body, p.parseBlock())
+	for !p.isAtEnd() {
+		body := p.declaration()
+		targetDecl.Body = append(targetDecl.Body, body)
 		p.skipNewline()
+
+		if p.check(token.RIGHT_BRACE) && depth == p.Depth {
+			break
+		}
 	}
 
-	p.consume(token.RIGHT_BRACE, "expect right brace")
+	p.consume(token.RIGHT_BRACE, "expect right brace after target declaration")
+
+	p.reduceDepth()
 
 	return targetDecl
 }
 
 func (p *Parser) runDeclaration() tree.Statement {
-	runDecl := tree.RunStatement{}
+	runDecl := tree.RunStatement{
+		Body: make([]tree.Statement, 0),
+	}
 
 	if p.check(token.IDENTIFIER) {
 		name := p.consume(token.IDENTIFIER, "expect target name")
@@ -134,13 +155,21 @@ func (p *Parser) runDeclaration() tree.Statement {
 
 	p.consume(token.LEFT_BRACE, "expect left brace")
 
+	depth := p.increaseDepth()
+
 	p.skipNewline()
 
-	for !p.check(token.RIGHT_BRACE) && !p.isAtEnd() {
-		runDecl.Body = append(runDecl.Body, p.parseBlock())
+	for !p.isAtEnd() {
+		runDecl.Body = append(runDecl.Body, p.declaration())
+
+		if p.check(token.RIGHT_BRACE) && depth == p.Depth {
+			break
+		}
 	}
 
-	p.consume(token.RIGHT_BRACE, "expect right brace")
+	p.consume(token.RIGHT_BRACE, "expect right brace after run declaration")
+
+	p.reduceDepth()
 
 	return runDecl
 }
@@ -150,14 +179,6 @@ func (p *Parser) actionStatement() tree.Statement {
 
 	return tree.ActionStatement{
 		Body: script,
-	}
-}
-
-func (p *Parser) parseBlock() tree.Statement {
-	if isKeyword(p.peek()) {
-		return p.declaration()
-	} else {
-		return p.actionStatement()
 	}
 }
 
@@ -244,6 +265,16 @@ func (p *Parser) skipNewline() {
 	if p.check(token.NEWLINE) {
 		p.advance()
 	}
+}
+
+func (p *Parser) increaseDepth() int {
+	p.Depth++
+	return p.Depth
+}
+
+func (p *Parser) reduceDepth() int {
+	p.Depth--
+	return p.Depth
 }
 
 func (p *Parser) isAtEnd() bool {

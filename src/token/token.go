@@ -1,7 +1,5 @@
 package token
 
-import "fmt"
-
 type TokenType int
 
 const (
@@ -58,12 +56,12 @@ type Token struct {
 	Depth    int
 }
 
-func (t Token) String() string {
-	switch {
-	case t.Type == EOF:
-		return "EOF"
-	case len(t.Text) > 50:
-		return fmt.Sprintf("%.10q...", t.Text)
-	}
-	return fmt.Sprintf("%q", t.Text)
-}
+// func (t Token) String() string {
+// 	switch {
+// 	case t.Type == EOF:
+// 		return "EOF"
+// 	case len(t.Text) > 50:
+// 		return fmt.Sprintf("%.10q...", t.Text)
+// 	}
+// 	return fmt.Sprintf("%q", t.Text)
+// }
