@@ -69,16 +69,16 @@ func main() {
 
 	if err := runny.Scan(); err != nil {
 		if runny.Config.Debug {
-			fmt.Print("scan error: ", err, ", (tokens:", lexer.TokenNames(runny.Lexer.Tokens), ")")
+			fmt.Print(err, ", (tokens:", lexer.TokenNames(runny.Lexer.Tokens), ")")
 		} else {
-			fmt.Print("scan error: ", err)
+			fmt.Print(err)
 		}
 		return
 	}
 
 	// i think we can condense the scan & parse stages into one by using a channel
 	if err := runny.Parse(); err != nil {
-		fmt.Print("parse error: ", err)
+		fmt.Print(err)
 		return
 	}
 

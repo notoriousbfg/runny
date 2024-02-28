@@ -62,7 +62,7 @@ func (p *Parser) declaration() tree.Statement {
 }
 
 func (p *Parser) varDeclaration() tree.Statement {
-	p.consume(token.LEFT_BRACE, "expect left brace before variables")
+	p.consume(token.LEFT_BRACE, "expect left brace")
 
 	depth := p.increaseDepth()
 
@@ -80,7 +80,7 @@ func (p *Parser) varDeclaration() tree.Statement {
 			p.skipNewline()
 			initialiser = p.declaration() // var is the output of an evaluated block e.g. var name { echo "tim" }
 			p.skipNewline()
-			p.consume(token.RIGHT_BRACE, "expect right brace after variable body")
+			p.consume(token.RIGHT_BRACE, "expect right brace")
 		} else if p.match(token.IDENTIFIER) {
 			p.advance()
 		} else {
@@ -103,7 +103,7 @@ func (p *Parser) varDeclaration() tree.Statement {
 		}
 	}
 
-	p.consume(token.RIGHT_BRACE, "expect right brace after variable declaration")
+	p.consume(token.RIGHT_BRACE, "expect right brace")
 
 	p.reduceDepth()
 
@@ -113,7 +113,7 @@ func (p *Parser) varDeclaration() tree.Statement {
 func (p *Parser) targetDeclaration() tree.Statement {
 	name := p.consume(token.IDENTIFIER, "expect target name")
 
-	p.consume(token.LEFT_BRACE, "expect left brace before target body")
+	p.consume(token.LEFT_BRACE, "expect left brace")
 
 	depth := p.increaseDepth()
 
@@ -134,7 +134,7 @@ func (p *Parser) targetDeclaration() tree.Statement {
 		}
 	}
 
-	p.consume(token.RIGHT_BRACE, "expect right brace after target declaration")
+	p.consume(token.RIGHT_BRACE, "expect right brace")
 
 	p.reduceDepth()
 
@@ -157,7 +157,7 @@ func (p *Parser) runDeclaration() tree.Statement {
 
 	p.skipNewline()
 
-	p.consume(token.LEFT_BRACE, "expect left brace before run body")
+	p.consume(token.LEFT_BRACE, "expect left brace")
 
 	depth := p.increaseDepth()
 
@@ -170,7 +170,7 @@ func (p *Parser) runDeclaration() tree.Statement {
 		}
 	}
 
-	p.consume(token.RIGHT_BRACE, "expect right brace after run declaration")
+	p.consume(token.RIGHT_BRACE, "expect right brace")
 
 	p.reduceDepth()
 
@@ -302,7 +302,7 @@ func (p *Parser) error(thisToken token.Token, message string) *ParseError {
 		where = "at '" + thisToken.Text + "'"
 	}
 	err := &ParseError{
-		Message: fmt.Sprintf("[line %d] error %s: %s\n", thisToken.Line, where, message),
+		Message: fmt.Sprintf("[line %d] parse error %s: %s\n", thisToken.Line, where, message),
 	}
 	return err
 }

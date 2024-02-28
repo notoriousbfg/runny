@@ -77,7 +77,7 @@ func (l *Lexer) readChar() error {
 		} else if char == "`" || char == "\"" {
 			l.matchString(char)
 		} else {
-			return fmt.Errorf("unsupported type: %s", char)
+			return l.error(char, "unsupported type")
 		}
 	}
 	return nil
@@ -189,6 +189,27 @@ func (l *Lexer) readIdentifier() string {
 	}
 	text := l.Input[l.Start:l.Current]
 	return text
+}
+
+type LexError struct {
+	Message string
+}
+
+func (le *LexError) Error() string {
+	return le.Message
+}
+
+func (l *Lexer) error(ch string, message string) *LexError {
+	var where string
+	if ch == "\n" {
+		where = "at '\\n'"
+	} else {
+		where = "at '" + ch + "'"
+	}
+	err := &LexError{
+		Message: fmt.Sprintf("[line %d] lex error %s: %s\n", l.Line, where, message),
+	}
+	return err
 }
 
 func TokenNames(types []token.Token) []string {

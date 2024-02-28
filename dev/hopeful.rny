@@ -1,0 +1,351 @@
+var {
+    MYSQL_USER root
+    MYSQL_PASS local1234
+    MYSQL_DSN "${MYSQL_USER}:${MYSQL_PASS}@tcp(db:3306)/service?multiStatements=true"
+    COGNITO_POOL_NAME service-pool
+    COGNITO_POOL_ID eu-west-1_poolid1234
+    COGNITO_CLIENT_NAME service-client
+    COGNITO_CLIENT_ID myclient123
+    COGNITO_IDP_NAME serviceIdProvider
+    COGNITO_REDIRECT_URI "http://example.com"
+    COGNITO_USERNAME "${COGNITO_IDP_NAME}_serviceUser"
+    COGNITO_PASSWORD "12345678Aa!"
+    API_GATEWAY_ID myid123
+}
+
+target start {
+    run build-lambdas
+    run { docker-compose up --build -d }
+    run mysql-migrate
+    run create-lambdas
+    run cognito-create-user-pool
+    run cognito-create-user-pool-client
+    run cognito-sign-up
+    run api-gateway-create-api
+    run api-gateway-register-routes
+}
+
+target stop {
+    run {
+        docker-compose stop
+    }
+}
+
+target restart {
+    run stop
+    run start
+}
+
+target clean {
+    run {
+        docker-compose down --rmi all
+    }
+}
+
+
+target test {
+    run {
+        go test ./...
+    }
+}
+
+target migrate-install {
+    run {
+        brew install golang-migrate
+    }
+}
+
+target sqlc-install {
+    run {
+        sqlc-install
+    }
+}
+
+target sqlc-generate {
+    run {
+        sqlc generate -f sqlc/sqlc.yaml
+    }
+}
+
+target mocks-generate {
+    run {
+        mockery
+    }
+}
+
+
+target build-lambdas {
+    run build-lambda-base
+    run build-lambda {
+        var { LAMBDA list-id-providers }
+    }
+    run build-lambda {
+        var { LAMBDA post-auth }
+    }
+    run build-lambda {
+        var { LAMBDA pre-signup }
+    }
+    run build-lambda {
+        var { LAMBDA pre-token }
+    }
+    run build-lambda {
+        var { LAMBDA register-user }
+    }
+}
+
+target build-lambda-base {
+    run {
+        docker build \
+            -f lambda.dockerfile \
+            -t "base-service:lambda" \
+            .
+    }
+}
+
+target build-lambda {
+    run {
+        docker build \
+            -f ${LAMBDA}.dockerfile \
+            --build-arg="MYSQL_DSN=${MYSQL_DSN}" \
+            -t "lambda-service:${LAMBDA}" \
+            .
+    }
+}
+
+target create-lambdas {
+    run create-lambda-function {
+        var { LAMBDA list-id-providers }
+    }
+    run create-lambda-function {
+        var { LAMBDA post-auth }
+    }
+    run create-lambda-function {
+        var { LAMBDA pre-signup }
+    }
+    run create-lambda-function {
+        var { LAMBDA pre-token }
+    }
+    run create-lambda-function {
+        var { LAMBDA register-user }
+    }
+}
+
+
+target create-lambda-function {
+    run {
+        aws lambda create-function \
+        --profile test \
+        --function-name service-${LAMBDA} \
+        --code ImageUri=lambda-service:${LAMBDA} \
+        --package-type Image \
+        --region eu-west-1 \
+        --endpoint-url http://localhost:4566 \
+        --timeout 60 \
+        --role arn:aws:iam::012345678901:role/DummyRole | jq
+    }
+}
+
+target create-activities-log-topic {
+    run {
+        aws sns create-topic \
+            --endpoint-url="http://localhost:4566" \
+            --name "service-sns-ActivitiesLog-topic" \
+            --region "eu-west-1" \
+            --profile "test" | jq -r '.TopicArn'
+    }
+}
+
+target update-lambda {
+    run build-lambda-base
+    run build-lambda
+    run {
+        aws lambda update-function-code \
+            --profile test \
+            --function-name service-${LAMBDA} \
+            --image-uri lambda-service:${LAMBDA} \
+            --region eu-west-1 \
+            --endpoint-url http://localhost:4566 \
+            --publish | jq
+    }
+}
+
+
+target invoke-post-auth {
+    run {
+        aws lambda invoke dev/aws_output.json \
+            --function-name service-post-auth \
+            --profile test \
+            --region eu-west-1 \
+            --endpoint-url http://localhost:4566 \
+            --payload file://dev/postauth.json \
+            --output text \
+            --log-type Tail \
+            --query 'LogResult' \
+            --cli-binary-format raw-in-base64-out | base64 --decode
+    }
+}
+
+target mysql-migrate {
+    run {
+        migrate \
+            -database 'mysql://root:local1234@tcp(localhost:3306)/service?multiStatements=true' \
+            -path migrations/service \
+            up
+
+        migrate \
+            -database 'mysql://root:local1234@tcp(localhost:3306)/service_audit?multiStatements=true' \
+            -path migrations/service_audit \
+            up
+    }
+}
+
+target mysql-migrate-down {
+    run {
+        migrate \
+            -database 'mysql://root:local1234@tcp(localhost:3306)/service_audit?multiStatements=true' \
+            -path migrations/service_audit \
+            down -all
+
+        migrate \
+            -database 'mysql://root:local1234@tcp(localhost:3306)/service?multiStatements=true' \
+            -path migrations/service \
+            down -all
+    }
+}
+
+target seed {
+    run {
+        docker exec -i service-db-1 mysql -u ${MYSQL_USER} -p${MYSQL_PASS} service < dev/presignup.sql
+    }
+}
+
+target tail-lambda {
+    run {
+        aws logs tail /aws/lambda/service-${LAMBDA} \
+            --profile test \
+            --region eu-west-1 \
+            --endpoint-url http://localhost:4566
+    }
+}
+
+target cognito-create-user-pool {
+    run {
+        aws cognito-idp create-user-pool \
+            --profile test \
+            --region eu-west-1 \
+            --endpoint-url http://localhost:4566 \
+            --pool-name ${COGNITO_POOL_NAME} \
+            --user-pool-tags "_custom_id_=${COGNITO_POOL_ID}" \
+            --lambda-config '{ \
+            "PreSignUp":"arn:aws:lambda:eu-west-1:000000000000:function:service-pre-signup", \
+            "PreTokenGeneration":"arn:aws:lambda:eu-west-1:000000000000:function:service-pre-token", \
+            "PostAuthentication":"arn:aws:lambda:eu-west-1:000000000000:function:service-post-auth" \
+            }' | jq
+    }
+}
+
+
+target cognito-create-user-pool-client {
+    run {
+        aws cognito-idp create-user-pool-client \
+            --profile test \
+            --region eu-west-1 \
+            --endpoint-url http://localhost:4566 \
+            --user-pool-id ${COGNITO_POOL_ID} \
+            --client-name _custom_id_:${COGNITO_CLIENT_ID} | jq
+    }
+}
+
+target cognito-sign-up {
+    run {
+        aws cognito-idp sign-up \
+            --profile test \
+            --region eu-west-1 \
+            --endpoint-url http://localhost:4566 \
+            --client-id ${COGNITO_CLIENT_ID} \
+            --username ${COGNITO_USERNAME} \
+            --password ${COGNITO_PASSWORD} \
+            --user-attributes Name=email,Value=user.participant@service.com | jq
+    }
+}
+
+target cognito-confirm-signup {
+    run {
+        aws cognito-idp confirm-sign-up \
+            --profile test \
+            --region eu-west-1 \
+            --endpoint-url http://localhost:4566 \
+            --client-id ${COGNITO_CLIENT_ID} \
+            --username ${COGNITO_USERNAME} \
+            --confirmation-code ${CODE} | jq
+    }
+}
+
+target cognito-list-users {
+    run {
+        aws cognito-idp list-users \
+            --profile test \
+            --region eu-west-1 \
+            --endpoint-url http://localhost:4566 \
+            --user-pool-id ${COGNITO_POOL_ID}
+    }
+}
+
+target cognito-create-jwt {
+    run {
+        aws cognito-idp initiate-auth \
+            --profile test \
+            --region eu-west-1 \
+            --endpoint-url http://localhost:4566 \
+            --client-id ${COGNITO_CLIENT_ID} \
+            --auth-flow USER_PASSWORD_AUTH \
+            --auth-parameters USERNAME=${COGNITO_USERNAME},PASSWORD=${COGNITO_PASSWORD} \
+            --output json | jq
+    }
+}
+
+target cognito-open-login-form {
+    run {
+        open "http://localhost:4566/_aws/cognito-idp/login?response_type=code&client_id=${COGNITO_CLIENT_ID}&redirect_uri=${COGNITO_REDIRECT_URI}"
+    }
+}
+
+target api-gateway-create-api {
+    run {
+        aws apigatewayv2 create-api \
+        --profile test \
+        --protocol-type HTTP \
+        --region eu-west-1 \
+        --endpoint-url http://localhost:4566 \
+        --name service-api \
+        --tags '{"_custom_id_":"${API_GATEWAY_ID}"}' | jq
+    }
+}
+
+target api-gateway-register-route {
+    var {
+        API_ID "${API_GATEWAY_ID}"
+    }
+    run {
+        ./build/register_route.sh ${LAMBDA} ${METHOD} ${ROUTE}
+    }
+}
+
+target api-gateway-register-routes {
+    run {
+        run api-gateway-register-route {
+            var {
+                LAMBDA register-user
+                METHOD POST
+                ROUTE register/participant
+            }
+        }
+        run api-gateway-register-route {
+            var {
+                LAMBDA list-id-providers
+                METHOD POST
+                ROUTE idps
+            }
+        }
+    }
+}
