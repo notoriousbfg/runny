@@ -9,12 +9,15 @@ var {
 
 target hello {
     run {
-        echo "hello"
+        for var in {1..10000}; do
+            echo $one
+            echo $two
+            echo "three"
+        done
     }
 }
 
 target iter {
-    run hello
     run hello
 }
 
