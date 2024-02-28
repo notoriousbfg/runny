@@ -1,4 +1,17 @@
 var {
+    GREEN {
+        run { tput -Txterm setaf 2 }
+    }
+    YELLOW {
+        run { tput -Txterm setaf 3 }
+    }
+    WHITE {
+        run { tput -Txterm setaf 7 }
+    }
+    RESET {
+        run { tput -Txterm sgr0 }
+    }
+
     MYSQL_USER root
     MYSQL_PASS local1234
     MYSQL_DSN "${MYSQL_USER}:${MYSQL_PASS}@tcp(db:3306)/service?multiStatements=true"
@@ -243,6 +256,8 @@ target cognito-create-user-pool {
             }' | jq
     }
 }
+
+run start
 
 
 target cognito-create-user-pool-client {
