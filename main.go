@@ -63,10 +63,6 @@ func (r *Runny) Evaluate() {
 		filteredStatements = append(filteredStatements, tree.RunStatement{
 			Name: foundTarget.Name,
 		})
-		// for _, statement := range filteredStatements {
-		// 	fmt.Printf("%T%+v\n", statement, statement)
-		// }
-		// return
 		statements = filteredStatements
 	}
 
@@ -104,10 +100,6 @@ func main() {
 			fmt.Print(err)
 		}
 		return
-	}
-
-	for _, token := range runny.Lexer.Tokens {
-		fmt.Printf("%T%+v\n", token, token)
 	}
 
 	// i think we can condense the scan & parse stages into one by using a channel
