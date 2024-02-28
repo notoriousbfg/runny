@@ -1,7 +1,16 @@
 var {
-    name {
-        run {
-            echo "hello"
-        }
+	files {
+		run { find . -type f -name "*.go" }
+	}
+}
+
+target check-files {
+	run {
+        for var in $files
+        do
+            stat $var
+        done
     }
 }
+
+run check-files

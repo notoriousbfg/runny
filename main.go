@@ -76,18 +76,10 @@ func main() {
 		return
 	}
 
-	fmt.Print(lexer.TokenNames(runny.Lexer.Tokens))
-	fmt.Println()
-	fmt.Println()
-
 	// i think we can condense the scan & parse stages into one by using a channel
 	if err := runny.Parse(); err != nil {
 		fmt.Print("parse error: ", err)
 		return
-	}
-
-	for _, statement := range runny.Parser.Statements {
-		fmt.Printf("%+v\n", statement)
 	}
 
 	runny.Evaluate()

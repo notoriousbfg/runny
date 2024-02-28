@@ -472,6 +472,38 @@ func TestStatements(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "var declaration inside run target context",
+			tokens: []token.Token{
+				{Type: token.RUN, Text: "run"},
+				{Type: token.IDENTIFIER, Text: "helloname"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.VAR, Text: "var"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "name"},
+				{Type: token.STRING, Text: "James"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+			want: []tree.Statement{
+				tree.RunStatement{
+					Name: token.Token{Type: token.IDENTIFIER, Text: "helloname"},
+					Body: []tree.Statement{
+						tree.VariableStatement{
+							Items: []tree.Variable{
+								{
+									Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
+									Initialiser: tree.ExpressionStatement{
+										Expression: tree.Literal{Value: "James"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, testcase := range cases {

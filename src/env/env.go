@@ -33,6 +33,7 @@ func (e *Environment) DefineVariable(name string, value tree.Statement) {
 
 func (e *Environment) DefineTarget(name string, value []tree.Statement) {
 	e.Values.Targets[name] = value
+
 	if e.Enclosing != nil {
 		if _, ok := e.Enclosing.Values.Targets[name]; ok {
 			e.Enclosing.Values.Targets[name] = value
@@ -60,7 +61,6 @@ func (e *Environment) GetTarget(name string) ([]tree.Statement, error) {
 	}
 
 	if e.Enclosing != nil {
-		fmt.Print(e.Enclosing.Values.Targets)
 		if _, ok := e.Enclosing.Values.Targets[name]; ok {
 			return e.Enclosing.Values.Targets[name], nil
 		}

@@ -36,10 +36,16 @@ func (i *Interpreter) Accept(statement tree.Statement) interface{} {
 func (i *Interpreter) VisitVariableStatement(stmt tree.VariableStatement) interface{} {
 	for _, variable := range stmt.Items {
 		// evaluate variable now and prevent infinite loop
-		if action, ok := variable.Initialiser.(tree.ActionStatement); ok {
-			stdout := i.runShellCommand(action.Body.Text, nil)
+		if run, ok := variable.Initialiser.(tree.RunStatement); ok {
+			var strBuilder strings.Builder
+			for _, action := range run.Body {
+				if run, ok := action.(tree.ActionStatement); ok {
+					stdout := i.runShellCommand(run.Body.Text, nil)
+					strBuilder.Write(stdout)
+				}
+			}
 			variable.Initialiser = tree.ExpressionStatement{
-				Expression: tree.Literal{Value: stdout},
+				Expression: tree.Literal{Value: strBuilder.String()},
 			}
 		}
 		i.Environment.DefineVariable(variable.Name.Text, variable.Initialiser)
@@ -53,9 +59,6 @@ func (i *Interpreter) VisitTargetStatement(stmt tree.TargetStatement) interface{
 }
 
 func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{} {
-	// if len(stmt.Body) == 0 {
-	// 	return nil
-	// }
 	evaluated := make(map[string]interface{}, 0)
 	variables := i.Environment.GetAll(env.VariableType)
 	for name, variable := range variables {
@@ -69,7 +72,7 @@ func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{
 func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 	body := stmt.Body
 
-	if (stmt.Name != token.Token{}) {
+	if stmt.Name != (token.Token{}) {
 		targetBody, err := i.Environment.GetTarget(stmt.Name.Text)
 		if err != nil {
 			panic(err)

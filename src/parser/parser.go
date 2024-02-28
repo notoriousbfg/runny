@@ -78,7 +78,6 @@ func (p *Parser) varDeclaration() tree.Statement {
 		var initialiser tree.Statement
 		if p.match(token.LEFT_BRACE) {
 			p.skipNewline()
-			fmt.Print(p.peek())
 			initialiser = p.declaration() // var is the output of an evaluated block e.g. var name { echo "tim" }
 			p.skipNewline()
 			p.consume(token.RIGHT_BRACE, "expect right brace after variable body")
@@ -151,8 +150,6 @@ func (p *Parser) runDeclaration() tree.Statement {
 		name := p.consume(token.IDENTIFIER, "expect target name")
 		runDecl.Name = name
 
-		fmt.Print(name)
-
 		if !p.check(token.LEFT_BRACE) {
 			return runDecl
 		}
@@ -174,9 +171,6 @@ func (p *Parser) runDeclaration() tree.Statement {
 	}
 
 	p.consume(token.RIGHT_BRACE, "expect right brace after run declaration")
-
-	fmt.Println("dsasd")
-	fmt.Println(p.peek())
 
 	p.reduceDepth()
 

@@ -111,6 +111,16 @@ func (l *Lexer) isAtEnd() bool {
 	return l.Current >= len(l.Input)
 }
 
+func (l *Lexer) lastToken() token.Token {
+	if len(l.Tokens) == 0 {
+		return token.Token{}
+	}
+	if len(l.Tokens) == 1 {
+		return l.Tokens[0]
+	}
+	return l.Tokens[len(l.Tokens)-1]
+}
+
 func (l *Lexer) peek() string {
 	if l.isAtEnd() {
 		return ""
@@ -165,6 +175,10 @@ func (l *Lexer) matchIdentifier() {
 		l.addToken(keyword, identifier)
 		l.Context = keyword
 	} else {
+		// we're in target context if running target
+		if l.lastToken().Type == token.RUN {
+			l.Context = token.TARGET
+		}
 		l.addToken(token.IDENTIFIER, identifier)
 	}
 }
