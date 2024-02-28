@@ -201,20 +201,6 @@ func (p *Parser) check(tokenType token.TokenType) bool {
 	return p.peek().Type == tokenType
 }
 
-func (p *Parser) checkSequence(tokenTypes ...token.TokenType) bool {
-	start := p.Current
-	defer func() {
-		p.Current = start
-	}()
-	for _, tokenType := range tokenTypes {
-		if !p.check(tokenType) {
-			return false
-		}
-		p.advance()
-	}
-	return true
-}
-
 func (p *Parser) advance() token.Token {
 	if !p.isAtEnd() {
 		p.Current++
@@ -230,11 +216,6 @@ func (p *Parser) previous() token.Token {
 // get the token at the current index
 func (p *Parser) peek() token.Token {
 	return p.Tokens[p.Current]
-}
-
-// get the token at the next index
-func (p *Parser) next() token.Token {
-	return p.Tokens[p.Current+1]
 }
 
 // if the token is of the specified type advance, otherwise panic
@@ -281,13 +262,4 @@ func (p *Parser) error(thisToken token.Token, message string) *ParseError {
 		Message: fmt.Sprintf("[line %d] parse error %s: %s\n", thisToken.Line, where, message),
 	}
 	return err
-}
-
-func isKeyword(t token.Token) bool {
-	for _, keyword := range token.Keywords {
-		if t.Type == keyword {
-			return true
-		}
-	}
-	return false
 }

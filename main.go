@@ -1,13 +1,14 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runny/src/interpreter"
 	"runny/src/lexer"
 	"runny/src/parser"
+	"runny/src/tree"
+	"strings"
 )
 
 type Runny struct {
@@ -40,23 +41,68 @@ func (r *Runny) Parse() error {
 }
 
 func (r *Runny) Evaluate() {
-	r.Interpreter = interpreter.New(r.Parser.Statements)
+	statements := r.Parser.Statements
+	if r.Config.Target != "" {
+		var foundTarget *tree.TargetStatement
+		filteredStatements := make([]tree.Statement, 0)
+		for _, statement := range statements {
+			if variable, isVariable := statement.(tree.VariableStatement); isVariable {
+				filteredStatements = append(filteredStatements, variable)
+			}
+			if target, isTarget := statement.(tree.TargetStatement); isTarget {
+				if target.Name.Text == r.Config.Target {
+					foundTarget = &target
+					filteredStatements = append(filteredStatements, target)
+				}
+			}
+		}
+		if foundTarget == nil {
+			fmt.Printf("target '%s' does not exist", r.Config.Target)
+			return
+		}
+		filteredStatements = append(filteredStatements, tree.RunStatement{
+			Name: foundTarget.Name,
+		})
+		// for _, statement := range filteredStatements {
+		// 	fmt.Printf("%T%+v\n", statement, statement)
+		// }
+		// return
+		statements = filteredStatements
+	}
+
+	r.Interpreter = interpreter.New(statements)
 	r.Interpreter.Evaluate()
 }
 
 type Config struct {
-	Debug bool
-	File  string
+	Target string
+	File   string
+	Debug  bool
 }
 
 func main() {
+	var target string
 	var fileFlag string
-	flag.StringVar(&fileFlag, "f", "runny.rny", "config file location")
-	flag.Parse()
+	var foundFlag bool
+	for _, arg := range os.Args[1:] {
+		if strings.HasPrefix(arg, "-f") {
+			foundFlag = true
+		} else if !foundFlag && target == "" {
+			target = arg
+		} else if foundFlag && fileFlag == "" {
+			fileFlag = arg
+			foundFlag = false
+		}
+	}
+
+	if target == "" {
+		target = "runny.rny"
+	}
 
 	runny := Runny{
 		Config: Config{
-			Debug: true,
+			Target: target,
+			Debug:  true,
 		},
 	}
 

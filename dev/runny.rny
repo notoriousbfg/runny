@@ -1,6 +1,6 @@
 var {
 	files {
-		run { find . -type f }
+		run { find . -type f -name "*.rny" }
 	}
 }
 
@@ -12,5 +12,3 @@ target check-files {
         done
     }
 }
-
-run check-files
