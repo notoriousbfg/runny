@@ -81,23 +81,7 @@ type Config struct {
 }
 
 func main() {
-	var target string
-	var fileFlag string
-	var foundFlag bool
-	for _, arg := range os.Args[1:] {
-		if strings.HasPrefix(arg, "-f") {
-			foundFlag = true
-		} else if !foundFlag && target == "" {
-			target = arg
-		} else if foundFlag && fileFlag == "" {
-			fileFlag = arg
-			foundFlag = false
-		}
-	}
-
-	if target == "" {
-		target = "runny.rny"
-	}
+	target, fileFlag := parseArgs()
 
 	runny := Runny{
 		Config: Config{
@@ -122,6 +106,10 @@ func main() {
 		return
 	}
 
+	for _, token := range runny.Lexer.Tokens {
+		fmt.Printf("%T%+v\n", token, token)
+	}
+
 	// i think we can condense the scan & parse stages into one by using a channel
 	if err := runny.Parse(); err != nil {
 		fmt.Print(err)
@@ -129,6 +117,27 @@ func main() {
 	}
 
 	runny.Evaluate()
+}
+
+func parseArgs() (string, string) {
+	var target string
+	var foundFlag bool
+	var fileFlag string
+	for _, arg := range os.Args[1:] {
+		if strings.HasPrefix(arg, "-f") {
+			foundFlag = true
+		} else if !foundFlag && target == "" {
+			target = arg
+		} else if foundFlag && fileFlag == "" {
+			fileFlag = arg
+			foundFlag = false
+		}
+	}
+
+	if fileFlag == "" {
+		fileFlag = "runny.rny"
+	}
+	return target, fileFlag
 }
 
 func configFile(flag string) (string, error) {

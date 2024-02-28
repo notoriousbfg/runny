@@ -1,14 +1,21 @@
 var {
-	files {
-		run { find . -type f -name "*.rny" }
-	}
-}
-
-target check-files {
-	run {
-        for var in $files
-        do
-            stat $var
-        done
+    one {
+        run { echo "one" }
+    }
+    two {
+        run { echo "two" }
     }
 }
+
+target hello {
+    run {
+        echo "hello"
+    }
+}
+
+target iter {
+    run hello
+    run hello
+}
+
+run iter

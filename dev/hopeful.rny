@@ -28,14 +28,6 @@ var {
 
 target start {
     run build-lambdas
-    run { docker-compose up --build -d }
-    run mysql-migrate
-    run create-lambdas
-    run cognito-create-user-pool
-    run cognito-create-user-pool-client
-    run cognito-sign-up
-    run api-gateway-create-api
-    run api-gateway-register-routes
 }
 
 target stop {
@@ -91,18 +83,6 @@ target build-lambdas {
     run build-lambda-base
     run build-lambda {
         var { LAMBDA list-id-providers }
-    }
-    run build-lambda {
-        var { LAMBDA post-auth }
-    }
-    run build-lambda {
-        var { LAMBDA pre-signup }
-    }
-    run build-lambda {
-        var { LAMBDA pre-token }
-    }
-    run build-lambda {
-        var { LAMBDA register-user }
     }
 }
 
@@ -257,9 +237,6 @@ target cognito-create-user-pool {
     }
 }
 
-run start
-
-
 target cognito-create-user-pool-client {
     run {
         aws cognito-idp create-user-pool-client \
@@ -362,3 +339,5 @@ target api-gateway-register-routes {
         }
     }
 }
+
+run start

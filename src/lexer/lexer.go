@@ -15,13 +15,43 @@ func New(input string) (*Lexer, error) {
 		Start:   0,
 		Current: 0,
 		Depth:   0,
-		Context: token.NONE,
+		Context: Context{},
 	}
 	err := lexer.readInput()
 	if err != nil {
 		return &lexer, err
 	}
 	return &lexer, nil
+}
+
+type Context struct {
+	Stack []token.TokenType
+}
+
+func (c *Context) current() token.TokenType {
+	if len(c.Stack) == 0 {
+		return token.NONE
+	}
+	if len(c.Stack) == 1 {
+		return c.Stack[0]
+	}
+	return c.Stack[len(c.Stack)-1] // last item
+}
+
+func (c *Context) setContext(t token.TokenType) {
+	c.Stack = append(c.Stack, t)
+}
+
+func (c *Context) replaceContext(t token.TokenType) {
+	c.resetContext()
+	c.setContext(t)
+}
+
+// trims last item
+func (c *Context) resetContext() {
+	if len(c.Stack) > 0 {
+		c.Stack = c.Stack[:len(c.Stack)-1]
+	}
 }
 
 type Lexer struct {
@@ -31,7 +61,7 @@ type Lexer struct {
 	Current int
 	Line    int
 	Depth   int // number of braces deep
-	Context token.TokenType
+	Context Context
 }
 
 func (l *Lexer) readInput() error {
@@ -54,12 +84,13 @@ func (l *Lexer) readChar() error {
 	case "{":
 		l.addToken(token.LEFT_BRACE, char)
 		l.Depth++
-		if l.Context == token.RUN {
+		if l.Context.current() == token.RUN {
 			l.matchScript()
 		}
 	case "}":
 		l.addToken(token.RIGHT_BRACE, char)
 		l.Depth--
+		l.Context.resetContext()
 	case ",":
 		l.addToken(token.COMMA, char)
 	case "$":
@@ -172,11 +203,11 @@ func (l *Lexer) matchIdentifier() {
 	identifier := l.readIdentifier()
 	if keyword, isKeyword := token.Keywords[identifier]; isKeyword {
 		l.addToken(keyword, identifier)
-		l.Context = keyword
+		l.Context.setContext(keyword)
 	} else {
 		// we're in target context if running target
 		if l.lastToken().Type == token.RUN {
-			l.Context = token.TARGET
+			l.Context.replaceContext(token.TARGET)
 		}
 		l.addToken(token.IDENTIFIER, identifier)
 	}
