@@ -1,24 +1,17 @@
 var {
-    one {
-        run { echo "one" }
-    }
-    two {
-        run { echo "two" }
-    }
+    name "Tim"
 }
 
 target hello {
     run {
-        for var in {1..10000}; do
-            echo $one
-            echo $two
-            echo "three"
-        done
+        echo "hello $name"
     }
 }
 
-target iter {
-    run hello
+run hello {
+    var {
+        name "Jenny"
+    }
 }
 
-run iter
+run hello
