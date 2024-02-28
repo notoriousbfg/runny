@@ -65,7 +65,6 @@ func (l *Lexer) readChar() error {
 	case "$":
 		l.matchIdentifier()
 	case "\n":
-		l.addToken(token.NEWLINE, "\\n")
 		l.Line++
 	case " ", "\r", "\t":
 		break
@@ -248,4 +247,15 @@ func isAllowedIdentChar(ch string) bool {
 		":": true,
 	}
 	return allowed[ch]
+}
+
+// helpful for creating parser tests
+func TokenGenerator(input string) {
+	lexer, err := New(input)
+	if err != nil {
+		fmt.Println(err)
+	}
+	for _, t := range lexer.Tokens {
+		fmt.Printf("{Type: token.%s, Text: \"%s\"},\n", token.TokenTypeNames[t.Type], t.Text)
+	}
 }

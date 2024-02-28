@@ -41,22 +41,14 @@ func (p *Parser) Parse() (err error) {
 }
 
 func (p *Parser) declaration() tree.Statement {
-	var statement tree.Statement
 	if p.match(token.VAR) {
-		statement = p.varDeclaration()
+		return p.varDeclaration()
 	} else if p.match(token.TARGET) {
-		statement = p.targetDeclaration()
+		return p.targetDeclaration()
 	} else if p.match(token.RUN) {
-		statement = p.runDeclaration()
+		return p.runDeclaration()
 	} else if p.check(token.SCRIPT) {
-		statement = p.actionStatement()
-	}
-	// there could be any number of newlines after a block
-	if statement != nil {
-		for p.check(token.NEWLINE) {
-			p.advance()
-		}
-		return statement
+		return p.actionStatement()
 	}
 	return p.expressionStatement()
 }
@@ -65,8 +57,6 @@ func (p *Parser) varDeclaration() tree.Statement {
 	p.consume(token.LEFT_BRACE, "expect left brace")
 
 	depth := p.increaseDepth()
-
-	p.skipNewline()
 
 	varDecl := tree.VariableStatement{
 		Items: make([]tree.Variable, 0),
@@ -77,12 +67,10 @@ func (p *Parser) varDeclaration() tree.Statement {
 
 		var initialiser tree.Statement
 		if p.match(token.LEFT_BRACE) {
-			p.skipNewline()
 			initialiser = p.declaration() // var is the output of an evaluated block e.g. var name { echo "tim" }
-			p.skipNewline()
 			p.consume(token.RIGHT_BRACE, "expect right brace")
-		} else if p.match(token.IDENTIFIER) {
-			p.advance()
+			// } else if p.match(token.IDENTIFIER) { // what was this for?
+			// p.advance()
 		} else {
 			initialiser = p.declaration()
 		}
@@ -95,8 +83,6 @@ func (p *Parser) varDeclaration() tree.Statement {
 		if p.check(token.COMMA) {
 			p.advance()
 		}
-
-		p.skipNewline()
 
 		if p.check(token.RIGHT_BRACE) && depth == p.Depth {
 			break
@@ -117,8 +103,6 @@ func (p *Parser) targetDeclaration() tree.Statement {
 
 	depth := p.increaseDepth()
 
-	p.skipNewline()
-
 	targetDecl := tree.TargetStatement{
 		Name: name,
 		Body: make([]tree.Statement, 0),
@@ -127,7 +111,6 @@ func (p *Parser) targetDeclaration() tree.Statement {
 	for !p.isAtEnd() {
 		body := p.declaration()
 		targetDecl.Body = append(targetDecl.Body, body)
-		p.skipNewline()
 
 		if p.check(token.RIGHT_BRACE) && depth == p.Depth {
 			break
@@ -155,13 +138,9 @@ func (p *Parser) runDeclaration() tree.Statement {
 		}
 	}
 
-	p.skipNewline()
-
 	p.consume(token.LEFT_BRACE, "expect left brace")
 
 	depth := p.increaseDepth()
-
-	p.skipNewline()
 
 	for !p.isAtEnd() {
 		runDecl.Body = append(runDecl.Body, p.declaration())
@@ -194,6 +173,9 @@ func (p *Parser) expressionStatement() tree.Statement {
 
 func (p *Parser) expression() tree.Expression {
 	if p.match(token.NUMBER, token.STRING) {
+		return tree.Literal{Value: p.previous().Text}
+	}
+	if p.match(token.IDENTIFIER) {
 		return tree.Literal{Value: p.previous().Text}
 	}
 
@@ -262,12 +244,6 @@ func (p *Parser) consume(tokenType token.TokenType, message string) token.Token 
 	}
 
 	panic(p.error(p.peek(), message))
-}
-
-func (p *Parser) skipNewline() {
-	if p.check(token.NEWLINE) {
-		p.advance()
-	}
 }
 
 func (p *Parser) increaseDepth() int {

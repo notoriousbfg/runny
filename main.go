@@ -51,7 +51,7 @@ type Config struct {
 
 func main() {
 	var fileFlag string
-	flag.StringVar(&fileFlag, "f", "config.rny", "config file location")
+	flag.StringVar(&fileFlag, "f", "runny.rny", "config file location")
 	flag.Parse()
 
 	runny := Runny{

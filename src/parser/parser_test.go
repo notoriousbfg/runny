@@ -1,8 +1,6 @@
 package parser_test
 
 import (
-	"encoding/json"
-	"fmt"
 	"reflect"
 	"runny/src/parser"
 	"runny/src/token"
@@ -47,10 +45,8 @@ func TestStatements(t *testing.T) {
 			tokens: []token.Token{
 				{Type: token.VAR, Text: "var"},
 				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.IDENTIFIER, Text: "name"},
 				{Type: token.STRING, Text: "Tim"},
-				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
 			},
@@ -74,17 +70,11 @@ func TestStatements(t *testing.T) {
 				{Type: token.LEFT_BRACE, Text: "{"},
 				{Type: token.IDENTIFIER, Text: "name"},
 				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.RUN, Text: "run"},
-				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.SCRIPT, Text: `echo "tim"`},
-				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
 			},
@@ -174,14 +164,12 @@ func TestStatements(t *testing.T) {
 			tokens: []token.Token{
 				{Type: token.VAR, Text: "var"},
 				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.NEWLINE, Text: "\\n"},
+
 				{Type: token.IDENTIFIER, Text: "name"},
 				{Type: token.STRING, Text: "Tim"},
 				{Type: token.COMMA, Text: ","},
-				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.IDENTIFIER, Text: "foo"},
 				{Type: token.STRING, Text: "bar"},
-				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
 			},
@@ -389,18 +377,13 @@ func TestStatements(t *testing.T) {
 			tokens: []token.Token{
 				{Type: token.VAR, Text: "var"},
 				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.IDENTIFIER, Text: "name"},
 				{Type: token.STRING, Text: "tim"},
-				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.VAR, Text: "var"},
 				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.IDENTIFIER, Text: "foo"},
 				{Type: token.STRING, Text: "bar"},
-				{Type: token.NEWLINE, Text: "\\n"},
 				{Type: token.RIGHT_BRACE, Text: "}"},
 				{Type: token.EOF, Text: ""},
 			},
@@ -504,6 +487,77 @@ func TestStatements(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "variable is not a string i.e. not wrapped in quotes",
+			tokens: []token.Token{
+				{Type: token.TARGET, Text: "target"},
+				{Type: token.IDENTIFIER, Text: "build-lambdas"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.RUN, Text: "run"},
+				{Type: token.IDENTIFIER, Text: "build-lambda-base"},
+				{Type: token.RUN, Text: "run"},
+				{Type: token.IDENTIFIER, Text: "build-lambda"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.VAR, Text: "var"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "LAMBDA"},
+				{Type: token.IDENTIFIER, Text: "list-id-providers"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.RUN, Text: "run"},
+				{Type: token.IDENTIFIER, Text: "build-lambda"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.VAR, Text: "var"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "LAMBDA"},
+				{Type: token.IDENTIFIER, Text: "post-auth"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+			want: []tree.Statement{
+				tree.TargetStatement{
+					Name: token.Token{Type: token.IDENTIFIER, Text: "build-lambdas"},
+					Body: []tree.Statement{
+						tree.RunStatement{
+							Name: token.Token{Type: token.IDENTIFIER, Text: "build-lambda-base"},
+							Body: []tree.Statement{},
+						},
+						tree.RunStatement{
+							Name: token.Token{Type: token.IDENTIFIER, Text: "build-lambda"},
+							Body: []tree.Statement{
+								tree.VariableStatement{
+									Items: []tree.Variable{
+										{
+											Name: token.Token{Type: token.IDENTIFIER, Text: "LAMBDA"},
+											Initialiser: tree.ExpressionStatement{
+												Expression: tree.Literal{Value: "list-id-providers"},
+											},
+										},
+									},
+								},
+							},
+						},
+						tree.RunStatement{
+							Name: token.Token{Type: token.IDENTIFIER, Text: "build-lambda"},
+							Body: []tree.Statement{
+								tree.VariableStatement{
+									Items: []tree.Variable{
+										{
+											Name: token.Token{Type: token.IDENTIFIER, Text: "LAMBDA"},
+											Initialiser: tree.ExpressionStatement{
+												Expression: tree.Literal{Value: "post-auth"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, testcase := range cases {
@@ -514,10 +568,10 @@ func TestStatements(t *testing.T) {
 				t.Fatalf("wantErr '%v', got '%+v', statements: '%v'", testcase.wantErr, err, p.Statements)
 			}
 			if !reflect.DeepEqual(testcase.want, p.Statements) {
-				wantJson, _ := json.Marshal(testcase.want)
-				stmtJson, _ := json.Marshal(p.Statements)
-				fmt.Println(wantJson)
-				fmt.Println(stmtJson)
+				// wantJson, _ := json.Marshal(testcase.want)
+				// stmtJson, _ := json.Marshal(p.Statements)
+				// fmt.Println(string(wantJson))
+				// fmt.Println(string(stmtJson))
 
 				t.Fatalf("expressions do not match: expected: %+v, actual: %+v", testcase.want, p.Statements)
 			}

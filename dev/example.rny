@@ -1,6 +1,6 @@
 var {
 	files {
-		run { find . -type f -name "*.go" }
+		run { find . -type f }
 	}
 }
 

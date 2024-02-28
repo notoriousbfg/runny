@@ -332,20 +332,18 @@ target api-gateway-register-route {
 }
 
 target api-gateway-register-routes {
-    run {
-        run api-gateway-register-route {
-            var {
-                LAMBDA register-user
-                METHOD POST
-                ROUTE register/participant
-            }
+    run api-gateway-register-route {
+        var {
+            LAMBDA register-user
+            METHOD POST
+            ROUTE register/participant
         }
-        run api-gateway-register-route {
-            var {
-                LAMBDA list-id-providers
-                METHOD POST
-                ROUTE idps
-            }
+    }
+    run api-gateway-register-route {
+        var {
+            LAMBDA list-id-providers
+            METHOD POST
+            ROUTE idps
         }
     }
 }
