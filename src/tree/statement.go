@@ -9,14 +9,14 @@ type Statement interface {
 }
 
 type StatementVisitor interface {
-	VisitVariableStatement(stmt VariableStatement) interface{}
+	VisitVariableDeclaration(stmt VariableDeclaration) interface{}
 	VisitTargetStatement(stmt TargetStatement) interface{}
 	VisitActionStatement(stmt ActionStatement) interface{}
 	VisitRunStatement(stmt RunStatement) interface{}
 	VisitExpressionStatement(stmt ExpressionStatement) interface{}
 }
 
-type VariableStatement struct {
+type VariableDeclaration struct {
 	Items []Variable
 }
 
@@ -25,8 +25,8 @@ type Variable struct {
 	Initialiser Statement
 }
 
-func (vs VariableStatement) Accept(visitor StatementVisitor) interface{} {
-	return visitor.VisitVariableStatement(vs)
+func (vs VariableDeclaration) Accept(visitor StatementVisitor) interface{} {
+	return visitor.VisitVariableDeclaration(vs)
 }
 
 type TargetStatement struct {
