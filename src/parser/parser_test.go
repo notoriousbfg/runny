@@ -28,7 +28,7 @@ func TestStatements(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 			want: []tree.Statement{
-				tree.VariableDeclaration{
+				tree.VariableStatement{
 					Items: []tree.Variable{
 						{
 							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
@@ -51,7 +51,7 @@ func TestStatements(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 			want: []tree.Statement{
-				tree.VariableDeclaration{
+				tree.VariableStatement{
 					Items: []tree.Variable{
 						{
 							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
@@ -79,7 +79,7 @@ func TestStatements(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 			want: []tree.Statement{
-				tree.VariableDeclaration{
+				tree.VariableStatement{
 					Items: []tree.Variable{
 						{
 							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
@@ -111,7 +111,7 @@ func TestStatements(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 			want: []tree.Statement{
-				tree.VariableDeclaration{
+				tree.VariableStatement{
 					Items: []tree.Variable{
 						{
 							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
@@ -141,7 +141,7 @@ func TestStatements(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 			want: []tree.Statement{
-				tree.VariableDeclaration{
+				tree.VariableStatement{
 					Items: []tree.Variable{
 						{
 							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
@@ -174,7 +174,7 @@ func TestStatements(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 			want: []tree.Statement{
-				tree.VariableDeclaration{
+				tree.VariableStatement{
 					Items: []tree.Variable{
 						{
 							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
@@ -232,7 +232,7 @@ func TestStatements(t *testing.T) {
 				tree.TargetStatement{
 					Name: token.Token{Type: token.IDENTIFIER, Text: "hello_cool_person"},
 					Body: []tree.Statement{
-						tree.VariableDeclaration{
+						tree.VariableStatement{
 							Items: []tree.Variable{
 								{
 									Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
@@ -276,7 +276,7 @@ func TestStatements(t *testing.T) {
 				tree.TargetStatement{
 					Name: token.Token{Type: token.IDENTIFIER, Text: "hello_cool_person"},
 					Body: []tree.Statement{
-						tree.VariableDeclaration{
+						tree.VariableStatement{
 							Items: []tree.Variable{
 								{
 									Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
@@ -293,7 +293,7 @@ func TestStatements(t *testing.T) {
 								},
 							},
 						},
-						tree.VariableDeclaration{
+						tree.VariableStatement{
 							Items: []tree.Variable{
 								{
 									Name: token.Token{Type: token.IDENTIFIER, Text: "foo"},
@@ -358,7 +358,7 @@ func TestStatements(t *testing.T) {
 				tree.RunStatement{
 					Name: token.Token{Type: token.IDENTIFIER, Text: "helloname"},
 					Body: []tree.Statement{
-						tree.VariableDeclaration{
+						tree.VariableStatement{
 							Items: []tree.Variable{
 								{
 									Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
@@ -388,7 +388,7 @@ func TestStatements(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 			want: []tree.Statement{
-				tree.VariableDeclaration{
+				tree.VariableStatement{
 					Items: []tree.Variable{
 						{
 							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
@@ -398,7 +398,7 @@ func TestStatements(t *testing.T) {
 						},
 					},
 				},
-				tree.VariableDeclaration{
+				tree.VariableStatement{
 					Items: []tree.Variable{
 						{
 							Name: token.Token{Type: token.IDENTIFIER, Text: "foo"},
@@ -421,7 +421,7 @@ func TestStatements(t *testing.T) {
 				{Type: token.EOF, Text: ""},
 			},
 			want: []tree.Statement{
-				tree.VariableDeclaration{
+				tree.VariableStatement{
 					Items: []tree.Variable{
 						{
 							Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
@@ -473,7 +473,7 @@ func TestStatements(t *testing.T) {
 				tree.RunStatement{
 					Name: token.Token{Type: token.IDENTIFIER, Text: "helloname"},
 					Body: []tree.Statement{
-						tree.VariableDeclaration{
+						tree.VariableStatement{
 							Items: []tree.Variable{
 								{
 									Name: token.Token{Type: token.IDENTIFIER, Text: "name"},
@@ -527,7 +527,7 @@ func TestStatements(t *testing.T) {
 						tree.RunStatement{
 							Name: token.Token{Type: token.IDENTIFIER, Text: "build-lambda"},
 							Body: []tree.Statement{
-								tree.VariableDeclaration{
+								tree.VariableStatement{
 									Items: []tree.Variable{
 										{
 											Name: token.Token{Type: token.IDENTIFIER, Text: "LAMBDA"},
@@ -542,7 +542,7 @@ func TestStatements(t *testing.T) {
 						tree.RunStatement{
 							Name: token.Token{Type: token.IDENTIFIER, Text: "build-lambda"},
 							Body: []tree.Statement{
-								tree.VariableDeclaration{
+								tree.VariableStatement{
 									Items: []tree.Variable{
 										{
 											Name: token.Token{Type: token.IDENTIFIER, Text: "LAMBDA"},

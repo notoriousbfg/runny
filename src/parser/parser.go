@@ -58,7 +58,7 @@ func (p *Parser) varDeclaration() tree.Statement {
 
 	depth := p.increaseDepth()
 
-	varDecl := tree.VariableDeclaration{
+	varDecl := tree.VariableStatement{
 		Items: make([]tree.Variable, 0),
 	}
 

@@ -46,7 +46,7 @@ func (r *Runny) Evaluate() {
 		var foundTarget *tree.TargetStatement
 		filteredStatements := make([]tree.Statement, 0)
 		for _, statement := range statements {
-			if variable, isVariable := statement.(tree.VariableDeclaration); isVariable {
+			if variable, isVariable := statement.(tree.VariableStatement); isVariable {
 				filteredStatements = append(filteredStatements, variable)
 			}
 			if target, isTarget := statement.(tree.TargetStatement); isTarget {

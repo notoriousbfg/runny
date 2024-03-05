@@ -1,14 +1,9 @@
 # this is a comment
-
 config {
     shell "bash"
 }
 
 target hello_name {
-	desc {
-		{ "this command does x & y" } 
-		{ "name", "the name of the user" }
-	}
 	var {
 		name "Tom"
 	}
@@ -25,17 +20,5 @@ run hello_name {
 	}
 	run {
 		echo "hello tim"
-	}
-}
-
-var {
-	morning false
-}
-
-run {
-	if morning {
-		run { echo "good morning" }
-	} else {
-		run { echo "good afternoon" }
 	}
 }

@@ -33,7 +33,7 @@ func (i *Interpreter) Accept(statement tree.Statement) interface{} {
 	return statement.Accept(i)
 }
 
-func (i *Interpreter) VisitVariableDeclaration(stmt tree.VariableDeclaration) interface{} {
+func (i *Interpreter) VisitVariableStatement(stmt tree.VariableStatement) interface{} {
 	for _, variable := range stmt.Items {
 		// evaluate variable now and prevent infinite loop
 		if run, ok := variable.Initialiser.(tree.RunStatement); ok {
@@ -70,12 +70,6 @@ func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{
 }
 
 func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
-	startEnvironment := i.Environment
-	i.Environment = env.NewEnvironment(i.Environment)
-	defer func() {
-		i.Environment = startEnvironment
-	}()
-
 	body := stmt.Body
 
 	if stmt.Name != (token.Token{}) {
@@ -83,15 +77,16 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 		if err != nil {
 			panic(err)
 		}
-		// append contents of target onto end of body
 		body = append(body, targetBody...)
 	}
 
 	for _, statement := range body {
+		if _, ok := statement.(tree.VariableStatement); ok {
+			i.Environment = env.NewEnvironment(i.Environment)
+		}
 		i.Accept(statement)
 	}
 
-	i.Environment = startEnvironment
 	return nil
 }
 
@@ -99,14 +94,7 @@ func (i *Interpreter) VisitExpressionStatement(stmt tree.ExpressionStatement) in
 	return stmt.Expression.Accept(i)
 }
 
-// TODO
-func (i *Interpreter) VisitVariableExpression(expr tree.VariableExpression) interface{} {
-	// variable, _ := i.Environment.GetVariable(expr.Name.Text)
-	// return variable
-	return nil
-}
-
-func (i *Interpreter) VisitLiteralExpression(expr tree.Literal) interface{} {
+func (i *Interpreter) VisitLiteralExpr(expr tree.Literal) interface{} {
 	return expr.Value
 }
 
