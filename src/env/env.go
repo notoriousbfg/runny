@@ -6,6 +6,10 @@ import (
 )
 
 func NewEnvironment(enclosing *Environment) *Environment {
+	depth := 0
+	if enclosing != nil {
+		depth = enclosing.Depth + 1
+	}
 	return &Environment{
 		Values: Values{
 			Variables: make(map[string]tree.Statement, 0),
@@ -13,6 +17,7 @@ func NewEnvironment(enclosing *Environment) *Environment {
 			Runs:      make(map[string][]tree.Statement, 0),
 		},
 		Enclosing: enclosing,
+		Depth:     depth,
 	}
 }
 
@@ -25,45 +30,40 @@ type Values struct {
 type Environment struct {
 	Values    Values
 	Enclosing *Environment
+	Depth     int
 }
 
 func (e *Environment) DefineVariable(name string, value tree.Statement) {
-	e.Values.Variables[name] = value
+	if len(name) > 0 {
+		e.Values.Variables[name] = value
+	}
 }
 
 func (e *Environment) DefineTarget(name string, value []tree.Statement) {
-	e.Values.Targets[name] = value
-
-	if e.Enclosing != nil {
-		if _, ok := e.Enclosing.Values.Targets[name]; ok {
-			e.Enclosing.Values.Targets[name] = value
-		}
+	if len(name) > 0 {
+		e.Values.Targets[name] = value
 	}
 }
 
-// func (e *Environment) GetVariable(name string) (tree.Statement, error) {
-// 	if _, ok := e.Values.Variables[name]; ok {
-// 		return e.Values.Variables[name], nil
-// 	}
-
-// 	if e.Enclosing != nil {
-// 		if _, ok := e.Enclosing.Values.Variables[name]; ok {
-// 			return e.Enclosing.Values.Variables[name], nil
-// 		}
-// 	}
-
-// 	return nil, fmt.Errorf("undefined variable '" + name + "'.")
-// }
-
-func (e *Environment) GetTarget(name string) ([]tree.Statement, error) {
-	if _, ok := e.Values.Targets[name]; ok {
-		return e.Values.Targets[name], nil
+func (e *Environment) GetVariable(name string) (tree.Statement, error) {
+	if val, ok := e.Values.Variables[name]; ok {
+		return val, nil
 	}
 
 	if e.Enclosing != nil {
-		if _, ok := e.Enclosing.Values.Targets[name]; ok {
-			return e.Enclosing.Values.Targets[name], nil
-		}
+		return e.Enclosing.GetVariable(name)
+	}
+
+	return nil, fmt.Errorf("undefined variable '" + name + "'.")
+}
+
+func (e *Environment) GetTarget(name string) ([]tree.Statement, error) {
+	if val, ok := e.Values.Targets[name]; ok {
+		return val, nil
+	}
+
+	if e.Enclosing != nil {
+		return e.Enclosing.GetTarget(name)
 	}
 
 	return nil, fmt.Errorf("undefined target '" + name + "'.")
@@ -81,12 +81,8 @@ func (e *Environment) GetAll(valueType ValueType) map[string]tree.Statement {
 	switch valueType {
 	case VariableType:
 		vars := make(map[string]tree.Statement, 0)
-		if e.Enclosing != nil {
-			for eKey, eVal := range e.Enclosing.Values.Variables {
-				vars[eKey] = eVal
-			}
-		}
-		for key, val := range e.Values.Variables {
+		for key := range e.Values.Variables {
+			val, _ := e.GetVariable(key)
 			vars[key] = val
 		}
 		return vars

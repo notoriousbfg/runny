@@ -20,6 +20,7 @@ var {
     }
 }
 ```
+Variables that you define are created as environment variables in the shell. Variables nested in targets and runs are scoped.
 
 A `target` is for commands you want to run later:
 ```

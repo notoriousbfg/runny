@@ -70,6 +70,12 @@ func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{
 }
 
 func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
+	startEnvironment := i.Environment
+	i.Environment = env.NewEnvironment(i.Environment)
+	defer func() {
+		i.Environment = startEnvironment
+	}()
+
 	body := stmt.Body
 
 	if stmt.Name != (token.Token{}) {
@@ -77,6 +83,7 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 		if err != nil {
 			panic(err)
 		}
+		// append contents of target onto end of body
 		body = append(body, targetBody...)
 	}
 
