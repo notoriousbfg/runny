@@ -14,7 +14,6 @@ type StatementVisitor interface {
 	VisitActionStatement(stmt ActionStatement) interface{}
 	VisitRunStatement(stmt RunStatement) interface{}
 	VisitExpressionStatement(stmt ExpressionStatement) interface{}
-	ResolveVariables() map[string]interface{}
 }
 
 type VariableStatement struct {

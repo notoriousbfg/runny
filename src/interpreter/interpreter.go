@@ -57,7 +57,7 @@ func (i *Interpreter) VisitTargetStatement(stmt tree.TargetStatement) interface{
 	return nil
 }
 
-func (i *Interpreter) ResolveVariables() map[string]interface{} {
+func (i *Interpreter) resolveVariables() map[string]interface{} {
 	evaluated := make(map[string]interface{}, 0)
 	variables := i.Environment.GetAll(env.VariableType)
 	for name, variable := range variables {
@@ -67,7 +67,7 @@ func (i *Interpreter) ResolveVariables() map[string]interface{} {
 }
 
 func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{} {
-	variables := i.ResolveVariables()
+	variables := i.resolveVariables()
 	bytes := i.runShellCommand(stmt.Body.Text, variables)
 	fmt.Print(string(bytes))
 	return nil

@@ -1,0 +1,7 @@
+var {
+    name "Jenny"
+}
+
+run {
+    echo "hello $name"
+}

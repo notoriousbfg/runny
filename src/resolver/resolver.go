@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	"regexp"
 	"runny/src/interpreter"
 	"runny/src/token"
 	"runny/src/tree"
@@ -10,11 +11,19 @@ func NewScopeStack() *ScopeStack {
 	return &ScopeStack{}
 }
 
-type Scope map[string]bool
+type ScopeVariable struct {
+	token   token.Token
+	defined bool
+}
+
+type Scope map[string]ScopeVariable
 
 // set a key/value within a scope
-func (s Scope) put(key string, val bool) {
-	s[key] = val
+func (s Scope) put(token token.Token, defined bool) {
+	s[token.Text] = ScopeVariable{
+		token:   token,
+		defined: defined,
+	}
 }
 
 // has returns whether a variable with the given
@@ -24,7 +33,7 @@ func (s Scope) has(name string) (declared, defined bool) {
 	if !ok {
 		return false, false
 	}
-	return true, v
+	return true, v.defined
 }
 
 type ScopeStack struct {
@@ -84,9 +93,11 @@ type Resolver struct {
 }
 
 func (r *Resolver) ResolveStatements(statements []tree.Statement) {
+	r.beginScope()
 	for _, statement := range statements {
 		r.resolveStatement(statement)
 	}
+	r.endScope()
 }
 
 func (r *Resolver) VisitTargetStatement(statement tree.TargetStatement) interface{} {
@@ -110,13 +121,17 @@ func (r *Resolver) VisitVariableStatement(statement tree.VariableStatement) inte
 
 func (r *Resolver) VisitRunStatement(statement tree.RunStatement) interface{} {
 	r.beginScope()
-	r.ResolveVariables() // ?
 	r.ResolveStatements(statement.Body)
+	if statement.Name != (token.Token{}) {
+		// resolve all statements for body of name
+	}
 	r.endScope()
 	return nil
 }
 
 func (r *Resolver) VisitActionStatement(statement tree.ActionStatement) interface{} {
+	vars := extractActionStatementVariables(statement.Body)
+	r.resolveVariables(vars)
 	return nil
 }
 
@@ -129,18 +144,27 @@ func (r *Resolver) VisitLiteralExpr(expr tree.Literal) interface{} {
 	return nil
 }
 
-func (r *Resolver) ResolveVariables() map[string]interface{} {
+// a bit different to CI's resolveLocal because we don't have variable
+// expressions per se i.e. vars aren't "visited"
+// this function is called at the beginning of an action statement,
+// iterating all the variables in each scope to the top of the
+// stack and reporting their depth to the interpreter
+func (r *Resolver) resolveVariables(variables []string) {
+	for _, varName := range variables {
+		r.resolveVariable(varName)
+	}
+}
+
+func (r *Resolver) resolveVariable(name string) {
 	for i := r.Scopes.size() - 1; i >= 0; i-- {
 		s := r.Scopes.get(i)
-		if _, defined := s.has(); defined {
-			// 	depth := len(r.scopes) - 1 - i
-			// 	r.interpreter.Resolve(expr, depth)
-			// 	s.use(name.Lexeme)
-			// 	return
+		if _, defined := s.has(name); defined {
+			depth := r.Scopes.size() - 1 - i
+			// r.Interpreter.Resolve(expr, depth)
+			// s.use(name.Lexeme)
+			// return
 		}
 	}
-
-	return map[string]interface{}{}
 }
 
 // func (r *Resolver) resolveExpression(expression tree.Expression) {
@@ -167,12 +191,34 @@ func (r *Resolver) declare(name token.Token) {
 	if r.Scopes.isEmpty() {
 		return
 	}
-	r.Scopes.peek().put(name.Text, false)
+	r.Scopes.peek().put(name, false)
 }
 
 func (r *Resolver) define(name token.Token) {
 	if r.Scopes.isEmpty() {
 		return
 	}
-	r.Scopes.peek().put(name.Text, true)
+	r.Scopes.peek().put(name, true)
+}
+
+func extractActionStatementVariables(body token.Token) []string {
+	varPattern := `\$([A-Za-z_][A-Za-z0-9_]*)|\$\{([^\}:-]+)`
+
+	varRegex, err := regexp.Compile(varPattern)
+	if err != nil {
+		return []string{}
+	}
+
+	substrMatches := varRegex.FindAllStringSubmatch(body.Text, -1)
+
+	matches := make([]string, 0)
+	for _, match := range substrMatches {
+		if match[1] != "" {
+			matches = append(matches, match[1])
+		} else if match[2] != "" {
+			matches = append(matches, match[2])
+		}
+	}
+
+	return matches
 }
