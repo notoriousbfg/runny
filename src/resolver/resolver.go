@@ -1,7 +1,7 @@
 package resolver
 
 import (
-	"regexp"
+	"fmt"
 	"runny/src/interpreter"
 	"runny/src/token"
 	"runny/src/tree"
@@ -123,20 +123,22 @@ func (r *Resolver) VisitRunStatement(statement tree.RunStatement) interface{} {
 	r.beginScope()
 	r.ResolveStatements(statement.Body)
 	if statement.Name != (token.Token{}) {
-		// resolve all statements for body of name
+		// todo: resolve all statements for body of name
 	}
 	r.endScope()
 	return nil
 }
 
 func (r *Resolver) VisitActionStatement(statement tree.ActionStatement) interface{} {
-	vars := extractActionStatementVariables(statement.Body)
-	r.resolveVariables(vars)
+	// vars := extractActionStatementVariables(statement.Body)
+	for _, variable := range statement.Variables {
+		r.VisitVariableExpr(variable)
+	}
 	return nil
 }
 
 func (r *Resolver) VisitExpressionStatement(statement tree.ExpressionStatement) interface{} {
-	// r.resolveExpression(statement.Expression)
+	r.resolveExpression(statement.Expression)
 	return nil
 }
 
@@ -144,40 +146,31 @@ func (r *Resolver) VisitLiteralExpr(expr tree.Literal) interface{} {
 	return nil
 }
 
-// a bit different to CI's resolveLocal because we don't have variable
-// expressions per se i.e. vars aren't "visited"
-// this function is called at the beginning of an action statement,
-// iterating all the variables in each scope to the top of the
-// stack and reporting their depth to the interpreter
-func (r *Resolver) resolveVariables(variables []string) {
-	for _, varName := range variables {
-		r.resolveVariable(varName)
-	}
+func (r *Resolver) VisitVariableExpr(expr tree.VariableExpression) interface{} {
+	r.resolveLocal(expr, expr.Name)
+	return nil
 }
 
-func (r *Resolver) resolveVariable(name string) {
+func (r *Resolver) resolveExpression(expression tree.Expression) {
+	expression.Accept(r)
+}
+
+func (r *Resolver) resolveStatement(statement tree.Statement) {
+	statement.Accept(r)
+}
+
+func (r *Resolver) resolveLocal(expr tree.Expression, name token.Token) {
 	for i := r.Scopes.size() - 1; i >= 0; i-- {
 		s := r.Scopes.get(i)
-		if _, defined := s.has(name); defined {
+		if _, defined := s.has(name.Text); defined {
 			depth := r.Scopes.size() - 1 - i
+			fmt.Println(depth)
 			// r.Interpreter.Resolve(expr, depth)
 			// s.use(name.Lexeme)
 			// return
 		}
 	}
 }
-
-// func (r *Resolver) resolveExpression(expression tree.Expression) {
-// 	expression.Accept(r)
-// }
-
-func (r *Resolver) resolveStatement(statement tree.Statement) {
-	statement.Accept(r)
-}
-
-// func (r *Resolver) resolveLocal() {
-// 	statement.Accept(r)
-// }
 
 func (r *Resolver) beginScope() {
 	r.Scopes.push(make(Scope))
@@ -201,24 +194,24 @@ func (r *Resolver) define(name token.Token) {
 	r.Scopes.peek().put(name, true)
 }
 
-func extractActionStatementVariables(body token.Token) []string {
-	varPattern := `\$([A-Za-z_][A-Za-z0-9_]*)|\$\{([^\}:-]+)`
+// func extractActionStatementVariables(body token.Token) []string {
+// 	varPattern := `\$([A-Za-z_][A-Za-z0-9_]*)|\$\{([^\}:-]+)`
 
-	varRegex, err := regexp.Compile(varPattern)
-	if err != nil {
-		return []string{}
-	}
+// 	varRegex, err := regexp.Compile(varPattern)
+// 	if err != nil {
+// 		return []string{}
+// 	}
 
-	substrMatches := varRegex.FindAllStringSubmatch(body.Text, -1)
+// 	substrMatches := varRegex.FindAllStringSubmatch(body.Text, -1)
 
-	matches := make([]string, 0)
-	for _, match := range substrMatches {
-		if match[1] != "" {
-			matches = append(matches, match[1])
-		} else if match[2] != "" {
-			matches = append(matches, match[2])
-		}
-	}
+// 	matches := make([]string, 0)
+// 	for _, match := range substrMatches {
+// 		if match[1] != "" {
+// 			matches = append(matches, match[1])
+// 		} else if match[2] != "" {
+// 			matches = append(matches, match[2])
+// 		}
+// 	}
 
-	return matches
-}
+// 	return matches
+// }

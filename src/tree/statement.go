@@ -39,7 +39,8 @@ func (ts TargetStatement) Accept(visitor StatementVisitor) interface{} {
 }
 
 type ActionStatement struct {
-	Body token.Token
+	Body      token.Token
+	Variables []VariableExpression
 }
 
 func (as ActionStatement) Accept(visitor StatementVisitor) interface{} {

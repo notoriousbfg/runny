@@ -57,18 +57,13 @@ func (i *Interpreter) VisitTargetStatement(stmt tree.TargetStatement) interface{
 	return nil
 }
 
-func (i *Interpreter) resolveVariables() map[string]interface{} {
-	evaluated := make(map[string]interface{}, 0)
-	variables := i.Environment.GetAll(env.VariableType)
-	for name, variable := range variables {
-		evaluated[name] = i.Accept(variable)
-	}
-	return evaluated
-}
-
 func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{} {
-	variables := i.resolveVariables()
-	bytes := i.runShellCommand(stmt.Body.Text, variables)
+	evaluated := make(map[string]interface{}, 0)
+	for _, variable := range stmt.Variables {
+		evaluated[variable.Name.Text] = i.VisitVariableExpr(variable)
+	}
+
+	bytes := i.runShellCommand(stmt.Body.Text, evaluated)
 	fmt.Print(string(bytes))
 	return nil
 }
@@ -103,6 +98,11 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 
 func (i *Interpreter) VisitExpressionStatement(stmt tree.ExpressionStatement) interface{} {
 	return stmt.Expression.Accept(i)
+}
+
+func (i *Interpreter) VisitVariableExpr(expr tree.VariableExpression) interface{} {
+	// TODO
+	return nil
 }
 
 func (i *Interpreter) VisitLiteralExpr(expr tree.Literal) interface{} {
