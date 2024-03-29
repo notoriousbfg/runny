@@ -38,7 +38,7 @@ func (r *Runny) Parse(tokens []token.Token) ([]tree.Statement, error) {
 	r.Parser = parser.New(tokens)
 	statements, err := r.Parser.Parse()
 	if err != nil {
-		return []tree.Statement{}, nil
+		return []tree.Statement{}, err
 	}
 	return statements, nil
 }

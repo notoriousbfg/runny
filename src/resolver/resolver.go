@@ -7,7 +7,12 @@ import (
 )
 
 func NewScopeStack() *ScopeStack {
-	return &ScopeStack{}
+	scopes := make([]Scope, 0)
+	scopes = append(scopes, Scope{}) // start with a single scope
+
+	return &ScopeStack{
+		scopes: scopes,
+	}
 }
 
 type ScopeVariable struct {
@@ -92,11 +97,9 @@ type Resolver struct {
 }
 
 func (r *Resolver) ResolveStatements(statements []tree.Statement) {
-	r.beginScope()
 	for _, statement := range statements {
 		r.resolveStatement(statement)
 	}
-	r.endScope()
 }
 
 func (r *Resolver) VisitTargetStatement(statement tree.TargetStatement) interface{} {
@@ -119,17 +122,17 @@ func (r *Resolver) VisitVariableStatement(statement tree.VariableStatement) inte
 }
 
 func (r *Resolver) VisitRunStatement(statement tree.RunStatement) interface{} {
-	r.beginScope()
-	r.ResolveStatements(statement.Body)
 	if statement.Name != (token.Token{}) {
-		// todo: resolve all statements for body of name
+		// todo: resolve all statements for body of named target
+	} else {
+		r.beginScope()
+		r.ResolveStatements(statement.Body)
+		r.endScope()
 	}
-	r.endScope()
 	return nil
 }
 
 func (r *Resolver) VisitActionStatement(statement tree.ActionStatement) interface{} {
-	// vars := extractActionStatementVariables(statement.Body)
 	for _, variable := range statement.Variables {
 		r.VisitVariableExpr(variable)
 	}
@@ -191,25 +194,3 @@ func (r *Resolver) define(name token.Token) {
 	}
 	r.Scopes.peek().put(name, true)
 }
-
-// func extractActionStatementVariables(body token.Token) []string {
-// 	varPattern := `\$([A-Za-z_][A-Za-z0-9_]*)|\$\{([^\}:-]+)`
-
-// 	varRegex, err := regexp.Compile(varPattern)
-// 	if err != nil {
-// 		return []string{}
-// 	}
-
-// 	substrMatches := varRegex.FindAllStringSubmatch(body.Text, -1)
-
-// 	matches := make([]string, 0)
-// 	for _, match := range substrMatches {
-// 		if match[1] != "" {
-// 			matches = append(matches, match[1])
-// 		} else if match[2] != "" {
-// 			matches = append(matches, match[2])
-// 		}
-// 	}
-
-// 	return matches
-// }
