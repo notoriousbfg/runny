@@ -65,11 +65,27 @@ func (r *Resolver) VisitTargetStatement(statement tree.TargetStatement) interfac
 	return nil
 }
 
-func (r *Resolver) VisitVarStatement(statement tree.TargetStatement) interface{} {
+func (r *Resolver) VisitVariableStatement(statement tree.VariableStatement) interface{} {
 	return nil
 }
 
-func (r *Resolver) resolverStatements(statements []tree.Statement) {
+func (r *Resolver) VisitRunStatement(statement tree.RunStatement) interface{} {
+	return nil
+}
+
+func (r *Resolver) VisitActionStatement(statement tree.ActionStatement) interface{} {
+	return nil
+}
+
+func (r *Resolver) VisitExpressionStatement(statement tree.ExpressionStatement) interface{} {
+	return nil
+}
+
+func (r *Resolver) VisitLiteralExpr(expr tree.Literal) interface{} {
+	return expr.Value
+}
+
+func (r *Resolver) resolveStatements(statements []tree.Statement) {
 	for _, statement := range statements {
 		r.resolveStatement(statement)
 	}

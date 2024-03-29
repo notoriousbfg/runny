@@ -7,6 +7,7 @@ import (
 	"runny/src/interpreter"
 	"runny/src/lexer"
 	"runny/src/parser"
+	"runny/src/token"
 	"runny/src/tree"
 	"strings"
 )
@@ -18,30 +19,34 @@ type Runny struct {
 	Config      Config
 }
 
-func (r *Runny) Scan() error {
+func (r *Runny) Scan() ([]token.Token, error) {
 	var err error
 	fileContents, err := os.ReadFile(r.Config.File)
 	if err != nil {
-		return err
+		return []token.Token{}, err
 	}
-	r.Lexer, err = lexer.New(string(fileContents))
+	r.Lexer = lexer.New(string(fileContents))
+	tokens, err := r.Lexer.ReadInput()
 	if err != nil {
-		return err
+		return []token.Token{}, err
 	}
-	return nil
+	return tokens, nil
 }
 
-func (r *Runny) Parse() error {
-	r.Parser = parser.New(r.Lexer.Tokens)
-	err := r.Parser.Parse()
+func (r *Runny) Parse(tokens []token.Token) ([]tree.Statement, error) {
+	r.Parser = parser.New(tokens)
+	statements, err := r.Parser.Parse()
 	if err != nil {
-		return err
+		return []tree.Statement{}, nil
 	}
-	return nil
+	return statements, nil
 }
 
-func (r *Runny) Evaluate() {
-	statements := r.Parser.Statements
+func (r *Runny) Resolve(statements []tree.Statement) ([]tree.Statement, error) {
+	return statements, nil
+}
+
+func (r *Runny) Evaluate(statements []tree.Statement) {
 	if r.Config.Target != "" {
 		var foundTarget *tree.TargetStatement
 		filteredStatements := make([]tree.Statement, 0)
@@ -93,7 +98,8 @@ func main() {
 	}
 	runny.Config.File = file
 
-	if err := runny.Scan(); err != nil {
+	tokens, err := runny.Scan()
+	if err != nil {
 		if runny.Config.Debug {
 			fmt.Print(err, ", (tokens:", lexer.TokenNames(runny.Lexer.Tokens), ")")
 		} else {
@@ -103,12 +109,19 @@ func main() {
 	}
 
 	// i think we can condense the scan & parse stages into one by using a channel
-	if err := runny.Parse(); err != nil {
+	statements, err := runny.Parse(tokens)
+	if err != nil {
 		fmt.Print(err)
 		return
 	}
 
-	runny.Evaluate()
+	statements, err = runny.Resolve(statements)
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
+
+	runny.Evaluate(statements)
 }
 
 func parseArgs() (string, string) {
