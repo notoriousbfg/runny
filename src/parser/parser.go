@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"runny/src/token"
 	"runny/src/tree"
+	"strings"
 )
 
 func New(tokens []token.Token) *Parser {
@@ -168,9 +169,9 @@ func (p *Parser) actionStatement() tree.Statement {
 			Name: token.Token{
 				Type:     token.IDENTIFIER,
 				Text:     variable,
-				Line:     script.Line,
+				Line:     script.Line, // may not be correct but i don't care about this too much right now
 				Depth:    script.Depth,
-				Position: script.Position, // ?
+				Position: script.Position + strings.Index(script.Text, variable),
 			},
 		})
 	}

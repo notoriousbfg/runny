@@ -13,12 +13,14 @@ import (
 func New(statements []tree.Statement) *Interpreter {
 	return &Interpreter{
 		Environment: env.NewEnvironment(nil),
+		locals:      make(map[string]int),
 	}
 }
 
 type Interpreter struct {
 	Statements  []tree.Statement
 	Environment *env.Environment
+	locals      map[string]int
 }
 
 func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{}) {
@@ -39,7 +41,7 @@ func (i *Interpreter) VisitVariableStatement(stmt tree.VariableStatement) interf
 			var strBuilder strings.Builder
 			for _, action := range run.Body {
 				if run, ok := action.(tree.ActionStatement); ok {
-					stdout := i.runShellCommand(run.Body.Text, nil)
+					stdout := runShellCommand(run.Body.Text, nil)
 					strBuilder.Write(stdout)
 				}
 			}
@@ -63,7 +65,7 @@ func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{
 		evaluated[variable.Name.Text] = i.VisitVariableExpr(variable)
 	}
 
-	bytes := i.runShellCommand(stmt.Body.Text, evaluated)
+	bytes := runShellCommand(stmt.Body.Text, evaluated)
 	fmt.Print(string(bytes))
 	return nil
 }
@@ -101,15 +103,26 @@ func (i *Interpreter) VisitExpressionStatement(stmt tree.ExpressionStatement) in
 }
 
 func (i *Interpreter) VisitVariableExpr(expr tree.VariableExpression) interface{} {
-	// TODO
-	return nil
+	val, err := i.Environment.GetVariable(expr.Name.Text)
+	if err != nil {
+		panic(err)
+	}
+	return val.Accept(i)
 }
 
 func (i *Interpreter) VisitLiteralExpr(expr tree.Literal) interface{} {
 	return expr.Value
 }
 
-func (i *Interpreter) runShellCommand(cmdString string, variables map[string]interface{}) []byte {
+func (i *Interpreter) Resolve(expr tree.Expression, depth int) {
+	i.locals[expressionToString(expr)] = depth
+}
+
+func expressionToString(expr tree.Expression) string {
+	return fmt.Sprintf("%#v", expr)
+}
+
+func runShellCommand(cmdString string, variables map[string]interface{}) []byte {
 	if len(cmdString) == 0 {
 		return []byte{}
 	}

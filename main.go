@@ -48,8 +48,7 @@ func (r *Runny) Resolve(statements []tree.Statement) {
 	resolver.ResolveStatements(statements)
 }
 
-func (r *Runny) Evaluate() {
-	statements := r.Interpreter.Statements
+func (r *Runny) Evaluate(statements []tree.Statement) {
 	if r.Config.Target != "" {
 		var foundTarget *tree.TargetStatement
 		filteredStatements := make([]tree.Statement, 0)
@@ -123,7 +122,7 @@ func main() {
 	// 	return
 	// }
 
-	runny.Evaluate()
+	runny.Evaluate(statements)
 }
 
 func parseArgs() (string, string) {

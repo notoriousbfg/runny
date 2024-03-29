@@ -1,7 +1,6 @@
 package resolver
 
 import (
-	"fmt"
 	"runny/src/interpreter"
 	"runny/src/token"
 	"runny/src/tree"
@@ -164,8 +163,7 @@ func (r *Resolver) resolveLocal(expr tree.Expression, name token.Token) {
 		s := r.Scopes.get(i)
 		if _, defined := s.has(name.Text); defined {
 			depth := r.Scopes.size() - 1 - i
-			fmt.Println(depth)
-			// r.Interpreter.Resolve(expr, depth)
+			r.Interpreter.Resolve(expr, depth)
 			// s.use(name.Lexeme)
 			// return
 		}
