@@ -12,7 +12,6 @@ import (
 
 func New(statements []tree.Statement) *Interpreter {
 	return &Interpreter{
-		Statements:  statements,
 		Environment: env.NewEnvironment(nil),
 	}
 }
@@ -22,8 +21,8 @@ type Interpreter struct {
 	Environment *env.Environment
 }
 
-func (i *Interpreter) Evaluate() (result []interface{}) {
-	for _, statement := range i.Statements {
+func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{}) {
+	for _, statement := range statements {
 		result = append(result, i.Accept(statement))
 	}
 	return
@@ -58,13 +57,18 @@ func (i *Interpreter) VisitTargetStatement(stmt tree.TargetStatement) interface{
 	return nil
 }
 
-func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{} {
+func (i *Interpreter) ResolveVariables() map[string]interface{} {
 	evaluated := make(map[string]interface{}, 0)
 	variables := i.Environment.GetAll(env.VariableType)
 	for name, variable := range variables {
 		evaluated[name] = i.Accept(variable)
 	}
-	bytes := i.runShellCommand(stmt.Body.Text, evaluated)
+	return evaluated
+}
+
+func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{} {
+	variables := i.ResolveVariables()
+	bytes := i.runShellCommand(stmt.Body.Text, variables)
 	fmt.Print(string(bytes))
 	return nil
 }

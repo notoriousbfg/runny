@@ -22,10 +22,9 @@ func TestInterpreter_Evaluate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			i := &Interpreter{
-				Statements:  tt.fields.Statements,
 				Environment: tt.fields.Environment,
 			}
-			if gotResult := i.Evaluate(); !reflect.DeepEqual(gotResult, tt.wantResult) {
+			if gotResult := i.Evaluate(tt.fields.Statements); !reflect.DeepEqual(gotResult, tt.wantResult) {
 				t.Errorf("Interpreter.Evaluate() = %v, want %v", gotResult, tt.wantResult)
 			}
 		})

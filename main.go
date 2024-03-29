@@ -7,6 +7,7 @@ import (
 	"runny/src/interpreter"
 	"runny/src/lexer"
 	"runny/src/parser"
+	"runny/src/resolver"
 	"runny/src/token"
 	"runny/src/tree"
 	"strings"
@@ -42,11 +43,13 @@ func (r *Runny) Parse(tokens []token.Token) ([]tree.Statement, error) {
 	return statements, nil
 }
 
-func (r *Runny) Resolve(statements []tree.Statement) ([]tree.Statement, error) {
-	return statements, nil
+func (r *Runny) Resolve(statements []tree.Statement) {
+	resolver := resolver.NewResolver(r.Interpreter)
+	resolver.ResolveStatements(statements)
 }
 
-func (r *Runny) Evaluate(statements []tree.Statement) {
+func (r *Runny) Evaluate() {
+	statements := r.Interpreter.Statements
 	if r.Config.Target != "" {
 		var foundTarget *tree.TargetStatement
 		filteredStatements := make([]tree.Statement, 0)
@@ -70,9 +73,7 @@ func (r *Runny) Evaluate(statements []tree.Statement) {
 		})
 		statements = filteredStatements
 	}
-
-	r.Interpreter = interpreter.New(statements)
-	r.Interpreter.Evaluate()
+	r.Interpreter.Evaluate(statements)
 }
 
 type Config struct {
@@ -115,13 +116,14 @@ func main() {
 		return
 	}
 
-	statements, err = runny.Resolve(statements)
-	if err != nil {
-		fmt.Print(err)
-		return
-	}
+	runny.Interpreter = interpreter.New(statements)
+	runny.Resolve(statements)
+	// if err != nil {
+	// 	fmt.Print(err)
+	// 	return
+	// }
 
-	runny.Evaluate(statements)
+	runny.Evaluate()
 }
 
 func parseArgs() (string, string) {
