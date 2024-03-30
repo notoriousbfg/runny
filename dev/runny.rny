@@ -20,4 +20,10 @@ run hello {
     }
 }
 
+run hello {
+    var {
+        name "Tom"
+    }
+}
+
 run hello

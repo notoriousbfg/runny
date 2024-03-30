@@ -7,7 +7,6 @@ import (
 	"runny/src/interpreter"
 	"runny/src/lexer"
 	"runny/src/parser"
-	"runny/src/resolver"
 	"runny/src/token"
 	"runny/src/tree"
 	"strings"
@@ -41,11 +40,6 @@ func (r *Runny) Parse(tokens []token.Token) ([]tree.Statement, error) {
 		return []tree.Statement{}, err
 	}
 	return statements, nil
-}
-
-func (r *Runny) Resolve(statements []tree.Statement) {
-	resolver := resolver.NewResolver(r.Interpreter)
-	resolver.ResolveStatements(statements)
 }
 
 func (r *Runny) Evaluate(statements []tree.Statement) {
@@ -116,7 +110,7 @@ func main() {
 	}
 
 	runny.Interpreter = interpreter.New(statements)
-	runny.Resolve(statements)
+	// runny.Resolve(statements)
 	// if err != nil {
 	// 	fmt.Print(err)
 	// 	return

@@ -13,29 +13,12 @@ import (
 func New(statements []tree.Statement) *Interpreter {
 	return &Interpreter{
 		Environment: env.NewEnvironment(nil),
-		locals:      make(locals),
 	}
-}
-
-type locals map[string]int
-
-func (l locals) put(expr tree.Expression, depth int) {
-	l[l.key(expr)] = depth
-}
-
-func (l locals) get(expr tree.Expression) (int, bool) {
-	distance, ok := l[l.key(expr)]
-	return distance, ok
-}
-
-func (l *locals) key(expr tree.Expression) string {
-	return fmt.Sprintf("%#v", expr)
 }
 
 type Interpreter struct {
 	Statements  []tree.Statement
 	Environment *env.Environment
-	locals      locals
 }
 
 func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{}) {
@@ -104,7 +87,7 @@ func (i *Interpreter) VisitExpressionStatement(stmt tree.ExpressionStatement) in
 }
 
 func (i *Interpreter) VisitVariableExpr(expr tree.VariableExpression) interface{} {
-	val, err := i.lookupVariable(expr.Name.Text, expr)
+	val, err := i.lookupVariable(expr.Name.Text)
 	if err != nil {
 		panic(err)
 	}
@@ -130,15 +113,7 @@ func (i *Interpreter) VisitLiteralExpr(expr tree.Literal) interface{} {
 	return expr.Value
 }
 
-func (i *Interpreter) Resolve(expr tree.Expression, depth int) {
-	i.locals.put(expr, depth)
-}
-
-// this isn't working properly
-func (i *Interpreter) lookupVariable(name string, expr tree.Expression) (interface{}, error) {
-	// if distance, ok := i.locals.get(expr); ok {
-	// 	return i.Environment.GetAt(distance, name), nil
-	// }
+func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
 	return i.Environment.Get(name)
 }
 
