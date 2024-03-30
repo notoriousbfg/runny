@@ -18,3 +18,9 @@ For _documentation_ purposes later, we could parse the command string, but let's
 
 I would very much like to _bake in_ documentation later, like Elixir does.
 
+## 30/03/24
+
+I've gone down a particular avenue where the parser will look for variables defined an action's script and create them as variables. However sometimes a variable might have been declared in a script but not necessarily as a runny variable e.g. in a loop.
+
+I think I should condense action and run statements into one. The interpreter will catch any variables declared in a run statement or target and the script will be a new field on the run statement. I _hope_ this will be easy to do.
+

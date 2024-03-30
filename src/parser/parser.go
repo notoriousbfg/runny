@@ -145,6 +145,8 @@ func (p *Parser) runDeclaration() tree.Statement {
 
 	depth := p.increaseDepth()
 
+	// check if script exists here?
+
 	for !p.isAtEnd() {
 		runDecl.Body = append(runDecl.Body, p.declaration())
 		if p.check(token.RIGHT_BRACE) && depth == p.Depth {

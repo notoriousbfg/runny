@@ -28,16 +28,16 @@ func (e *Environment) Define(name string, value interface{}) {
 	}
 }
 
-func (e *Environment) Get(name string) interface{} {
+func (e *Environment) Get(name string) (interface{}, error) {
 	if val, ok := e.Values[name]; ok {
-		return val
+		return val, nil
 	}
 
 	if e.Enclosing != nil {
 		return e.Enclosing.Get(name)
 	}
 
-	return ""
+	return nil, fmt.Errorf("undefined variable '" + name + "'.")
 }
 
 func (e *Environment) printValues() {
