@@ -12,11 +12,26 @@ import (
 
 func New(statements []tree.Statement) *Interpreter {
 	return &Interpreter{
+		Config:      make(map[string]interface{}, 0),
 		Environment: env.NewEnvironment(nil),
 	}
 }
 
+type Config map[string]interface{}
+
+func (c Config) getShell() string {
+	shell, ok := c["shell"]
+	if ok {
+		trimmedShell := trimQuotes(shell)
+		if shellStr, ok := trimmedShell.(string); ok {
+			return shellStr
+		}
+	}
+	return "sh"
+}
+
 type Interpreter struct {
+	Config      Config
 	Statements  []tree.Statement
 	Environment *env.Environment
 }
@@ -30,6 +45,13 @@ func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{
 
 func (i *Interpreter) Accept(statement tree.Statement) interface{} {
 	return statement.Accept(i)
+}
+
+func (i *Interpreter) VisitConfigStatement(stmt tree.ConfigStatement) interface{} {
+	for _, config := range stmt.Items {
+		i.Config[config.Name.Text] = i.Accept(config.Initialiser)
+	}
+	return nil
 }
 
 func (i *Interpreter) VisitVariableStatement(stmt tree.VariableStatement) interface{} {
@@ -50,7 +72,7 @@ func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{
 		variable, _ := i.lookupVariable(k)
 		evaluated[k] = variable
 	}
-	bytes := runShellCommand(stmt.Body.Text, evaluated)
+	bytes := runShellCommand(stmt.Body.Text, evaluated, i.Config.getShell())
 	fmt.Println(stmt.Body.Text)
 	fmt.Print(string(bytes))
 	return nil
@@ -102,7 +124,7 @@ func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
 		var strBuilder strings.Builder
 		for _, action := range typedVal.Body {
 			if run, ok := action.(tree.ActionStatement); ok {
-				stdout := runShellCommand(run.Body.Text, nil)
+				stdout := runShellCommand(run.Body.Text, nil, i.Config.getShell())
 				strBuilder.Write(stdout)
 			}
 		}
@@ -114,11 +136,11 @@ func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
 	}
 }
 
-func runShellCommand(cmdString string, variables map[string]interface{}) []byte {
+func runShellCommand(cmdString string, variables map[string]interface{}, shell string) []byte {
 	if len(cmdString) == 0 {
 		return []byte{}
 	}
-	cmd := exec.Command("sh", "-c", cmdString)
+	cmd := exec.Command(shell, "-c", cmdString)
 	cmd.Env = os.Environ()
 	for name, value := range variables {
 		cmd.Env = append(

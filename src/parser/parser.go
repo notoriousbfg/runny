@@ -42,7 +42,9 @@ func (p *Parser) Parse() (statements []tree.Statement, err error) {
 }
 
 func (p *Parser) declaration() tree.Statement {
-	if p.match(token.VAR) {
+	if p.match(token.CONFIG) {
+		return p.configDeclaration()
+	} else if p.match(token.VAR) {
 		return p.varDeclaration()
 	} else if p.match(token.TARGET) {
 		return p.targetDeclaration()
@@ -52,6 +54,40 @@ func (p *Parser) declaration() tree.Statement {
 		return p.actionStatement()
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) configDeclaration() tree.Statement {
+	p.consume(token.LEFT_BRACE, "expect left brace")
+
+	depth := p.increaseDepth()
+
+	configDecl := tree.ConfigStatement{
+		Items: make([]tree.Config, 0),
+	}
+
+	for !p.isAtEnd() {
+		name := p.consume(token.IDENTIFIER, "expect config variable")
+		initialiser := p.declaration()
+
+		configDecl.Items = append(configDecl.Items, tree.Config{
+			Name:        name,
+			Initialiser: initialiser,
+		})
+
+		if p.check(token.COMMA) {
+			p.advance()
+		}
+
+		if p.check(token.RIGHT_BRACE) && depth == p.Depth {
+			break
+		}
+	}
+
+	p.consume(token.RIGHT_BRACE, "expect right brace")
+
+	p.reduceDepth()
+
+	return configDecl
 }
 
 func (p *Parser) varDeclaration() tree.Statement {
@@ -68,10 +104,8 @@ func (p *Parser) varDeclaration() tree.Statement {
 
 		var initialiser tree.Statement
 		if p.match(token.LEFT_BRACE) {
-			initialiser = p.declaration() // var is the output of an evaluated block e.g. var name { echo "tim" }
+			initialiser = p.declaration() // var is the output of an evaluated block e.g. var name { run { echo "tim" } }
 			p.consume(token.RIGHT_BRACE, "expect right brace")
-			// } else if p.match(token.IDENTIFIER) { // what was this for?
-			// p.advance()
 		} else {
 			initialiser = p.declaration()
 		}
@@ -142,8 +176,6 @@ func (p *Parser) runDeclaration() tree.Statement {
 	p.consume(token.LEFT_BRACE, "expect left brace")
 
 	depth := p.increaseDepth()
-
-	// check if script exists here?
 
 	for !p.isAtEnd() {
 		runDecl.Body = append(runDecl.Body, p.declaration())

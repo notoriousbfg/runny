@@ -9,11 +9,25 @@ type Statement interface {
 }
 
 type StatementVisitor interface {
+	VisitConfigStatement(stmt ConfigStatement) interface{}
 	VisitVariableStatement(stmt VariableStatement) interface{}
 	VisitTargetStatement(stmt TargetStatement) interface{}
 	VisitActionStatement(stmt ActionStatement) interface{}
 	VisitRunStatement(stmt RunStatement) interface{}
 	VisitExpressionStatement(stmt ExpressionStatement) interface{}
+}
+
+type ConfigStatement struct {
+	Items []Config
+}
+
+type Config struct {
+	Name        token.Token
+	Initialiser Statement
+}
+
+func (c ConfigStatement) Accept(visitor StatementVisitor) interface{} {
+	return visitor.VisitConfigStatement(c)
 }
 
 type VariableStatement struct {

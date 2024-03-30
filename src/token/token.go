@@ -16,6 +16,7 @@ const (
 	VAR
 	TARGET
 	RUN
+	CONFIG
 
 	NEWLINE
 	NONE
@@ -36,6 +37,7 @@ var TokenTypeNames = map[TokenType]string{
 	VAR:    "VAR",
 	TARGET: "TARGET",
 	RUN:    "RUN",
+	CONFIG: "CONFIG",
 
 	NEWLINE: "NEWLINE",
 	NONE:    "NONE",
@@ -46,6 +48,7 @@ var Keywords = map[string]TokenType{
 	"var":    VAR,
 	"target": TARGET,
 	"run":    RUN,
+	"config": CONFIG,
 }
 
 type Token struct {
