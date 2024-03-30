@@ -163,6 +163,7 @@ func (p *Parser) actionStatement() tree.Statement {
 	script := p.consume(token.SCRIPT, "expect action body")
 
 	// this feels hacky because it is
+	// TODO: it won't work because it doesn't allow for variables you define in your script, like a loop
 	variableExpressions := make([]tree.VariableExpression, 0)
 	for _, variable := range extractActionStatementVariables(script) {
 		variableExpressions = append(variableExpressions, tree.VariableExpression{

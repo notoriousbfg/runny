@@ -1,28 +1,16 @@
-target build-lambda-base {
-    run { echo "start build..." }
-}
-
-target build-lambda {
-    run { echo "building ${LAMBDA}..." }
-}
-
-target build-lambdas {
-    run build-lambda-base
-    run build-lambda {
-        var {LAMBDA one }
-    }
-    run build-lambda {
-        var {LAMBDA two }
-    }
-    run build-lambda {
-        var {LAMBDA three }
-    }
-    run build-lambda {
-        var {LAMBDA four }
-    }
-    run build-lambda {
-        var {LAMBDA five }
+var {
+    files {
+        run { find . -type f -name "*.go" }
     }
 }
 
-run build-lambdas
+target check-files {
+	run {
+        for var in $files
+        do
+            stat $var
+        done
+    }
+}
+
+run check-files

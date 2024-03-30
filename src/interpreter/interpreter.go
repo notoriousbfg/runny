@@ -65,10 +65,7 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 	body := stmt.Body
 
 	if stmt.Name != (token.Token{}) {
-		targetBodyInt, err := i.Environment.Get(stmt.Name.Text)
-		if err != nil {
-			panic(err)
-		}
+		targetBodyInt := i.Environment.Get(stmt.Name.Text)
 		if targetBody, ok := targetBodyInt.([]tree.Statement); ok {
 			// append contents of target onto end of body
 			body = append(body, targetBody...)
@@ -114,7 +111,7 @@ func (i *Interpreter) VisitLiteralExpr(expr tree.Literal) interface{} {
 }
 
 func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
-	return i.Environment.Get(name)
+	return i.Environment.Get(name), nil
 }
 
 func runShellCommand(cmdString string, variables map[string]interface{}) []byte {
