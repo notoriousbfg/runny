@@ -51,6 +51,7 @@ func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{
 		evaluated[k] = variable
 	}
 	bytes := runShellCommand(stmt.Body.Text, evaluated)
+	fmt.Println(stmt.Body.Text)
 	fmt.Print(string(bytes))
 	return nil
 }
@@ -85,29 +86,6 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 func (i *Interpreter) VisitExpressionStatement(stmt tree.ExpressionStatement) interface{} {
 	return stmt.Expression.Accept(i)
 }
-
-// func (i *Interpreter) VisitVariableExpr(expr tree.VariableExpression) interface{} {
-// 	val, err := i.lookupVariable(expr.Name.Text)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	switch typedVal := val.(type) {
-// 	// if run statement evaluate its actions now
-// 	case tree.RunStatement:
-// 		var strBuilder strings.Builder
-// 		for _, action := range typedVal.Body {
-// 			if run, ok := action.(tree.ActionStatement); ok {
-// 				stdout := runShellCommand(run.Body.Text, nil)
-// 				strBuilder.Write(stdout)
-// 			}
-// 		}
-// 		return strBuilder.String()
-// 	case tree.Statement:
-// 		return i.Accept(typedVal)
-// 	default:
-// 		return ""
-// 	}
-// }
 
 func (i *Interpreter) VisitLiteralExpr(expr tree.Literal) interface{} {
 	return expr.Value
