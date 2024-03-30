@@ -22,7 +22,7 @@ type Parser struct {
 	Statements []tree.Statement
 }
 
-func (p *Parser) Parse() (err error) {
+func (p *Parser) Parse() (statements []tree.Statement, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if str, ok := r.(string); ok {
@@ -37,7 +37,8 @@ func (p *Parser) Parse() (err error) {
 	for !p.isAtEnd() {
 		p.Statements = append(p.Statements, p.declaration())
 	}
-	return nil
+	statements = p.Statements
+	return
 }
 
 func (p *Parser) declaration() tree.Statement {
@@ -141,6 +142,8 @@ func (p *Parser) runDeclaration() tree.Statement {
 	p.consume(token.LEFT_BRACE, "expect left brace")
 
 	depth := p.increaseDepth()
+
+	// check if script exists here?
 
 	for !p.isAtEnd() {
 		runDecl.Body = append(runDecl.Body, p.declaration())

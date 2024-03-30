@@ -1,18 +1,16 @@
-target build-lambdas {
-    run build-lambda-base
-    run build-lambda {
-        var {LAMBDA list-id-providers }
-    }
-    run build-lambda {
-        var {LAMBDA post-auth }
-    }
-    run build-lambda {
-        var {LAMBDA pre-signup }
-    }
-    run build-lambda {
-        var {LAMBDA pre-token }
-    }
-    run build-lambda {
-        var {LAMBDA register-user }
+var {
+    files {
+        run { find . -type f -name "*.go" }
     }
 }
+
+target check-files {
+	run {
+        for var in $files
+        do
+            stat $var
+        done
+    }
+}
+
+run check-files

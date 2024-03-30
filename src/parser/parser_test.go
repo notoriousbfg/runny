@@ -563,17 +563,17 @@ func TestStatements(t *testing.T) {
 	for _, testcase := range cases {
 		t.Run(testcase.name, func(t *testing.T) {
 			p := parser.New(testcase.tokens)
-			err := p.Parse()
+			statements, err := p.Parse()
 			if (err != nil) != testcase.wantErr {
 				t.Fatalf("wantErr '%v', got '%+v', statements: '%v'", testcase.wantErr, err, p.Statements)
 			}
-			if !reflect.DeepEqual(testcase.want, p.Statements) {
+			if !reflect.DeepEqual(testcase.want, statements) {
 				// wantJson, _ := json.Marshal(testcase.want)
 				// stmtJson, _ := json.Marshal(p.Statements)
 				// fmt.Println(string(wantJson))
 				// fmt.Println(string(stmtJson))
 
-				t.Fatalf("expressions do not match: expected: %+v, actual: %+v", testcase.want, p.Statements)
+				t.Fatalf("expressions do not match: expected: %+v, actual: %+v", testcase.want, statements)
 			}
 		})
 	}

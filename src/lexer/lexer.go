@@ -8,8 +8,8 @@ import (
 	"unicode"
 )
 
-func New(input string) (*Lexer, error) {
-	lexer := Lexer{
+func New(input string) *Lexer {
+	return &Lexer{
 		Input:   input,
 		Line:    1,
 		Start:   0,
@@ -17,11 +17,6 @@ func New(input string) (*Lexer, error) {
 		Depth:   0,
 		Context: Context{},
 	}
-	err := lexer.readInput()
-	if err != nil {
-		return &lexer, err
-	}
-	return &lexer, nil
 }
 
 type Context struct {
@@ -64,17 +59,17 @@ type Lexer struct {
 	Context Context
 }
 
-func (l *Lexer) readInput() error {
+func (l *Lexer) ReadInput() ([]token.Token, error) {
 	for !l.isAtEnd() {
 		l.Start = l.Current
 		err := l.readChar()
 		if err != nil {
-			return err
+			return []token.Token{}, err
 		}
 	}
 	l.Start++
 	l.addToken(token.EOF, "")
-	return nil
+	return l.Tokens, nil
 }
 
 func (l *Lexer) readChar() error {
@@ -282,11 +277,12 @@ func isAllowedIdentChar(ch string) bool {
 
 // helpful for creating parser tests
 func TokenGenerator(input string) {
-	lexer, err := New(input)
+	lexer := New(input)
+	tokens, err := lexer.ReadInput()
 	if err != nil {
 		fmt.Println(err)
 	}
-	for _, t := range lexer.Tokens {
+	for _, t := range tokens {
 		fmt.Printf("{Type: token.%s, Text: \"%s\"},\n", token.TokenTypeNames[t.Type], t.Text)
 	}
 }

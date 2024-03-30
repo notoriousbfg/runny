@@ -186,7 +186,8 @@ func TestLexer(t *testing.T) {
 
 	for _, testcase := range cases {
 		t.Run(testcase.name, func(t *testing.T) {
-			l, err := lexer.New(testcase.inputString)
+			l := lexer.New(testcase.inputString)
+			_, err := l.ReadInput()
 			if (err != nil) != testcase.wantErr {
 				t.Fatalf("wantErr '%v', got '%+v', tokens: '%v'", testcase.wantErr, err, l.Tokens)
 			}

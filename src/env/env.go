@@ -2,94 +2,103 @@ package env
 
 import (
 	"fmt"
-	"runny/src/tree"
 )
 
 func NewEnvironment(enclosing *Environment) *Environment {
+	depth := 0
+	if enclosing != nil {
+		depth = enclosing.Depth + 1
+	}
 	return &Environment{
-		Values: Values{
-			Variables: make(map[string]tree.Statement, 0),
-			Targets:   make(map[string][]tree.Statement, 0),
-			Runs:      make(map[string][]tree.Statement, 0),
-		},
+		Values:    NewValues(),
 		Enclosing: enclosing,
+		Depth:     depth,
 	}
-}
-
-type Values struct {
-	Variables map[string]tree.Statement
-	Targets   map[string][]tree.Statement
-	Runs      map[string][]tree.Statement
-}
-
-type Environment struct {
-	Values    Values
-	Enclosing *Environment
-}
-
-func (e *Environment) DefineVariable(name string, value tree.Statement) {
-	e.Values.Variables[name] = value
-}
-
-func (e *Environment) DefineTarget(name string, value []tree.Statement) {
-	e.Values.Targets[name] = value
-
-	if e.Enclosing != nil {
-		if _, ok := e.Enclosing.Values.Targets[name]; ok {
-			e.Enclosing.Values.Targets[name] = value
-		}
-	}
-}
-
-// func (e *Environment) GetVariable(name string) (tree.Statement, error) {
-// 	if _, ok := e.Values.Variables[name]; ok {
-// 		return e.Values.Variables[name], nil
-// 	}
-
-// 	if e.Enclosing != nil {
-// 		if _, ok := e.Enclosing.Values.Variables[name]; ok {
-// 			return e.Enclosing.Values.Variables[name], nil
-// 		}
-// 	}
-
-// 	return nil, fmt.Errorf("undefined variable '" + name + "'.")
-// }
-
-func (e *Environment) GetTarget(name string) ([]tree.Statement, error) {
-	if _, ok := e.Values.Targets[name]; ok {
-		return e.Values.Targets[name], nil
-	}
-
-	if e.Enclosing != nil {
-		if _, ok := e.Enclosing.Values.Targets[name]; ok {
-			return e.Enclosing.Values.Targets[name], nil
-		}
-	}
-
-	return nil, fmt.Errorf("undefined target '" + name + "'.")
 }
 
 type ValueType int
 
 const (
-	VariableType ValueType = iota
-	TargetType
-	RunType
+	VTUnknown ValueType = iota
+	VTVar
+	VTTarget
 )
 
-func (e *Environment) GetAll(valueType ValueType) map[string]tree.Statement {
+type Values struct {
+	Vars    map[string]interface{}
+	Targets map[string]interface{}
+}
+
+func NewValues() Values {
+	return Values{
+		Vars:    make(map[string]interface{}),
+		Targets: map[string]interface{}{},
+	}
+}
+
+type Environment struct {
+	Values    Values
+	Enclosing *Environment
+	Depth     int
+}
+
+func (e *Environment) Define(name string, valueType ValueType, value interface{}) {
+	if len(name) > 0 {
+		switch valueType {
+		case VTVar:
+			e.Values.Vars[name] = value
+		case VTTarget:
+			e.Values.Targets[name] = value
+		}
+	}
+}
+
+func (e *Environment) Get(name string, valueType ValueType) (interface{}, error) {
 	switch valueType {
-	case VariableType:
-		vars := make(map[string]tree.Statement, 0)
+	case VTVar:
+		if val, ok := e.Values.Vars[name]; ok {
+			return val, nil
+		}
+
 		if e.Enclosing != nil {
-			for eKey, eVal := range e.Enclosing.Values.Variables {
-				vars[eKey] = eVal
+			return e.Enclosing.Get(name, VTVar)
+		}
+	case VTTarget:
+		if val, ok := e.Values.Targets[name]; ok {
+			return val, nil
+		}
+
+		if e.Enclosing != nil {
+			return e.Enclosing.Get(name, VTTarget)
+		}
+	}
+	return nil, fmt.Errorf("undefined variable '" + name + "'.")
+}
+
+func (e *Environment) GetAll(valueType ValueType) map[string]interface{} {
+	switch valueType {
+	case VTVar:
+		vars := e.Values.Vars
+		if e.Enclosing != nil {
+			for k, v := range e.Enclosing.GetAll(VTVar) {
+				// local variable is preferred to global
+				if _, exists := vars[k]; !exists {
+					vars[k] = v
+				}
 			}
 		}
-		for key, val := range e.Values.Variables {
-			vars[key] = val
-		}
 		return vars
+	case VTTarget:
+		targets := e.Values.Targets
+		if e.Enclosing != nil {
+			for k, v := range e.Enclosing.GetAll(VTTarget) {
+				// local variable is preferred to global
+				if _, exists := targets[k]; !exists {
+					targets[k] = v
+				}
+			}
+		}
+		return targets
 	}
-	return nil
+	return make(map[string]interface{}, 0)
 }
