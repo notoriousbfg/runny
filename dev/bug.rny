@@ -1,18 +1,28 @@
+target build-lambda-base {
+    run { echo "start build..." }
+}
+
+target build-lambda {
+    run { echo "building ${LAMBDA}..." }
+}
+
 target build-lambdas {
     run build-lambda-base
     run build-lambda {
-        var {LAMBDA list-id-providers }
+        var {LAMBDA one }
     }
     run build-lambda {
-        var {LAMBDA post-auth }
+        var {LAMBDA two }
     }
     run build-lambda {
-        var {LAMBDA pre-signup }
+        var {LAMBDA three }
     }
     run build-lambda {
-        var {LAMBDA pre-token }
+        var {LAMBDA four }
     }
     run build-lambda {
-        var {LAMBDA register-user }
+        var {LAMBDA five }
     }
 }
+
+run build-lambdas
