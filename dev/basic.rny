@@ -1,11 +1,21 @@
 config {
-    shell "/bin/zsh"
+    shell "/bin/bash"
 }
 
 var {
     name "tim"
+
+    GREEN {
+        run { tput -Txterm setaf 2 }
+    }
+    YELLOW {
+        run { tput -Txterm setaf 3 }
+    }
 }
 
-run {
-    echo "hello $name"
+target hellogoodbye {
+    run { echo "${GREEN}hello $name" }
+    run { echo "${YELLOW}goodbye $name" }
 }
+
+run hellogoodbye
