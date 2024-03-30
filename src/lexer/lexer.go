@@ -90,6 +90,8 @@ func (l *Lexer) readChar() error {
 		l.addToken(token.COMMA, char)
 	case "$":
 		l.matchIdentifier()
+	case "#":
+		l.matchComment()
 	case "\n":
 		l.Line++
 	case " ", "\r", "\t":
@@ -151,6 +153,12 @@ func (l *Lexer) peek() string {
 		return ""
 	}
 	return string(l.Input[l.Current])
+}
+
+func (l *Lexer) matchComment() {
+	for !l.isAtEnd() && l.peek() != "\n" {
+		l.nextChar()
+	}
 }
 
 func (l *Lexer) matchScript() {

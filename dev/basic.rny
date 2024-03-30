@@ -2,11 +2,16 @@ config {
     shell "/bin/bash"
 }
 
+# this is a comment
+# this is another comment
+
 var {
     name "tim"
 
+    # this is another comment
+
     GREEN {
-        run { tput -Txterm setaf 2 }
+        run { tput -Txterm setaf 2 } # this is another comment
     }
     YELLOW {
         run { tput -Txterm setaf 3 }
