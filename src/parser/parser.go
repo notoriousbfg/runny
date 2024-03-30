@@ -2,10 +2,8 @@ package parser
 
 import (
 	"fmt"
-	"regexp"
 	"runny/src/token"
 	"runny/src/tree"
-	"strings"
 )
 
 func New(tokens []token.Token) *Parser {
@@ -164,24 +162,8 @@ func (p *Parser) runDeclaration() tree.Statement {
 func (p *Parser) actionStatement() tree.Statement {
 	script := p.consume(token.SCRIPT, "expect action body")
 
-	// this feels hacky because it is
-	// TODO: it won't work because it doesn't allow for variables you define in your script, like a loop
-	variableExpressions := make([]tree.VariableExpression, 0)
-	for _, variable := range extractActionStatementVariables(script) {
-		variableExpressions = append(variableExpressions, tree.VariableExpression{
-			Name: token.Token{
-				Type:     token.IDENTIFIER,
-				Text:     variable,
-				Line:     script.Line, // may not be correct but i don't care about this too much right now
-				Depth:    script.Depth,
-				Position: script.Position + strings.Index(script.Text, variable),
-			},
-		})
-	}
-
 	return tree.ActionStatement{
-		Body:      script,
-		Variables: variableExpressions,
+		Body: script,
 	}
 }
 
@@ -283,22 +265,4 @@ func (p *Parser) error(thisToken token.Token, message string) *ParseError {
 		Message: fmt.Sprintf("[line %d] parse error %s: %s\n", thisToken.Line, where, message),
 	}
 	return err
-}
-
-func extractActionStatementVariables(body token.Token) []string {
-	varPattern := `\$([A-Za-z_][A-Za-z0-9_]*)|\$\{([^\}:-]+)`
-	varRegex, err := regexp.Compile(varPattern)
-	if err != nil {
-		return []string{}
-	}
-	substrMatches := varRegex.FindAllStringSubmatch(body.Text, -1)
-	matches := make([]string, 0)
-	for _, match := range substrMatches {
-		if match[1] != "" {
-			matches = append(matches, match[1])
-		} else if match[2] != "" {
-			matches = append(matches, match[2])
-		}
-	}
-	return matches
 }

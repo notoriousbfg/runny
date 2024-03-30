@@ -34,22 +34,22 @@ func (i *Interpreter) Accept(statement tree.Statement) interface{} {
 
 func (i *Interpreter) VisitVariableStatement(stmt tree.VariableStatement) interface{} {
 	for _, variable := range stmt.Items {
-		i.Environment.Define(variable.Name.Text, variable.Initialiser)
+		i.Environment.Define(variable.Name.Text, env.VTVar, variable.Initialiser)
 	}
 	return nil
 }
 
 func (i *Interpreter) VisitTargetStatement(stmt tree.TargetStatement) interface{} {
-	i.Environment.Define(stmt.Name.Text, stmt.Body)
+	i.Environment.Define(stmt.Name.Text, env.VTTarget, stmt.Body)
 	return nil
 }
 
 func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{} {
 	evaluated := make(map[string]interface{}, 0)
-	for _, variable := range stmt.Variables {
-		evaluated[variable.Name.Text] = i.VisitVariableExpr(variable)
+	for k := range i.Environment.GetAll(env.VTVar) {
+		variable, _ := i.lookupVariable(k)
+		evaluated[k] = variable
 	}
-
 	bytes := runShellCommand(stmt.Body.Text, evaluated)
 	fmt.Print(string(bytes))
 	return nil
@@ -65,7 +65,7 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 	body := stmt.Body
 
 	if stmt.Name != (token.Token{}) {
-		targetBodyInt, err := i.Environment.Get(stmt.Name.Text)
+		targetBodyInt, err := i.Environment.Get(stmt.Name.Text, env.VTTarget)
 		if err != nil {
 			panic(err)
 		}
@@ -86,12 +86,39 @@ func (i *Interpreter) VisitExpressionStatement(stmt tree.ExpressionStatement) in
 	return stmt.Expression.Accept(i)
 }
 
-func (i *Interpreter) VisitVariableExpr(expr tree.VariableExpression) interface{} {
-	val, err := i.lookupVariable(expr.Name.Text)
+// func (i *Interpreter) VisitVariableExpr(expr tree.VariableExpression) interface{} {
+// 	val, err := i.lookupVariable(expr.Name.Text)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	switch typedVal := val.(type) {
+// 	// if run statement evaluate its actions now
+// 	case tree.RunStatement:
+// 		var strBuilder strings.Builder
+// 		for _, action := range typedVal.Body {
+// 			if run, ok := action.(tree.ActionStatement); ok {
+// 				stdout := runShellCommand(run.Body.Text, nil)
+// 				strBuilder.Write(stdout)
+// 			}
+// 		}
+// 		return strBuilder.String()
+// 	case tree.Statement:
+// 		return i.Accept(typedVal)
+// 	default:
+// 		return ""
+// 	}
+// }
+
+func (i *Interpreter) VisitLiteralExpr(expr tree.Literal) interface{} {
+	return expr.Value
+}
+
+func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
+	variable, err := i.Environment.Get(name, env.VTVar)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	switch typedVal := val.(type) {
+	switch typedVal := variable.(type) {
 	// if run statement evaluate its actions now
 	case tree.RunStatement:
 		var strBuilder strings.Builder
@@ -101,20 +128,12 @@ func (i *Interpreter) VisitVariableExpr(expr tree.VariableExpression) interface{
 				strBuilder.Write(stdout)
 			}
 		}
-		return strBuilder.String()
+		return strBuilder.String(), nil
 	case tree.Statement:
-		return i.Accept(typedVal)
+		return i.Accept(typedVal), nil
 	default:
-		return ""
+		return "", nil
 	}
-}
-
-func (i *Interpreter) VisitLiteralExpr(expr tree.Literal) interface{} {
-	return expr.Value
-}
-
-func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
-	return i.Environment.Get(name)
 }
 
 func runShellCommand(cmdString string, variables map[string]interface{}) []byte {
