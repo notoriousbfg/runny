@@ -14,4 +14,10 @@ run hello {
     }
 }
 
+run hello {
+    var {
+        name "James"
+    }
+}
+
 run hello

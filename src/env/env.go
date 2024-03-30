@@ -28,18 +28,18 @@ func (e *Environment) Define(name string, value interface{}) {
 	}
 }
 
-func (e *Environment) Assign(name string, value interface{}) {
-	if _, ok := e.Values[name]; ok {
-		e.Define(name, value)
-	}
-	if e.Enclosing != nil {
-		e.Enclosing.Assign(name, value)
-	}
-}
+// func (e *Environment) Assign(name string, value interface{}) {
+// 	if _, ok := e.Values[name]; ok {
+// 		e.Define(name, value)
+// 	}
+// 	if e.Enclosing != nil {
+// 		e.Enclosing.Assign(name, value)
+// 	}
+// }
 
-func (e *Environment) AssignAt(distance int, name string, value interface{}) {
-	e.ancestor(distance).Define(name, value)
-}
+// func (e *Environment) AssignAt(distance int, name string, value interface{}) {
+// 	e.ancestor(distance).Define(name, value)
+// }
 
 func (e *Environment) Get(name string) (interface{}, error) {
 	if val, ok := e.Values[name]; ok {
@@ -55,6 +55,12 @@ func (e *Environment) Get(name string) (interface{}, error) {
 
 func (e *Environment) GetAt(distance int, name string) interface{} {
 	return e.ancestor(distance).Values[name]
+}
+
+func (e *Environment) printValues() {
+	for _, val := range e.Values {
+		fmt.Println(val)
+	}
 }
 
 func (e *Environment) ancestor(distance int) *Environment {

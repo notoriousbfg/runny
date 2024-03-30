@@ -109,7 +109,7 @@ func (i *Interpreter) VisitVariableExpr(expr tree.VariableExpression) interface{
 		panic(err)
 	}
 	switch typedVal := val.(type) {
-	// if run statement, evaluate its actions now
+	// if run statement evaluate its actions now
 	case tree.RunStatement:
 		var strBuilder strings.Builder
 		for _, action := range typedVal.Body {
@@ -121,8 +121,9 @@ func (i *Interpreter) VisitVariableExpr(expr tree.VariableExpression) interface{
 		return strBuilder.String()
 	case tree.Statement:
 		return i.Accept(typedVal)
+	default:
+		return ""
 	}
-	return nil
 }
 
 func (i *Interpreter) VisitLiteralExpr(expr tree.Literal) interface{} {
@@ -133,11 +134,12 @@ func (i *Interpreter) Resolve(expr tree.Expression, depth int) {
 	i.locals.put(expr, depth)
 }
 
+// this isn't working properly
 func (i *Interpreter) lookupVariable(name string, expr tree.Expression) (interface{}, error) {
-	if distance, ok := i.locals.get(expr); ok {
-		return i.Environment.GetAt(distance, name), nil
-	}
-	return nil, nil // ?
+	// if distance, ok := i.locals.get(expr); ok {
+	// 	return i.Environment.GetAt(distance, name), nil
+	// }
+	return i.Environment.Get(name)
 }
 
 func runShellCommand(cmdString string, variables map[string]interface{}) []byte {

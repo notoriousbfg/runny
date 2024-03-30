@@ -122,20 +122,13 @@ func (r *Resolver) VisitVariableStatement(statement tree.VariableStatement) inte
 }
 
 func (r *Resolver) VisitRunStatement(statement tree.RunStatement) interface{} {
-	if statement.Name != (token.Token{}) {
-		// todo: resolve all statements for body of named target
-	} else {
-		r.beginScope()
-		r.ResolveStatements(statement.Body)
-		r.endScope()
-	}
+	r.beginScope()
+	r.ResolveStatements(statement.Body)
+	r.endScope()
 	return nil
 }
 
 func (r *Resolver) VisitActionStatement(statement tree.ActionStatement) interface{} {
-	for _, variable := range statement.Variables {
-		r.VisitVariableExpr(variable)
-	}
 	return nil
 }
 
@@ -161,6 +154,11 @@ func (r *Resolver) resolveStatement(statement tree.Statement) {
 	statement.Accept(r)
 }
 
+// "We start at the innermost scope and work outwards, looking in each map for a
+// matching name. If we find the variable, we resolve it, passing in the number of
+// scopes between the current innermost scope and the scope where the variable was
+// found. So, if the variable was found in the current scope, we pass in 0. If it’s
+// in the immediately enclosing scope, 1"
 func (r *Resolver) resolveLocal(expr tree.Expression, name token.Token) {
 	for i := r.Scopes.size() - 1; i >= 0; i-- {
 		s := r.Scopes.get(i)
@@ -168,7 +166,7 @@ func (r *Resolver) resolveLocal(expr tree.Expression, name token.Token) {
 			depth := r.Scopes.size() - 1 - i
 			r.Interpreter.Resolve(expr, depth)
 			// s.use(name.Lexeme)
-			// return
+			return
 		}
 	}
 }
