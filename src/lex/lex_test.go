@@ -1,7 +1,7 @@
-package lexer_test
+package lex_test
 
 import (
-	"runny/src/lexer"
+	"runny/src/lex"
 	"runny/src/token"
 	"testing"
 )
@@ -186,13 +186,13 @@ func TestLexer(t *testing.T) {
 
 	for _, testcase := range cases {
 		t.Run(testcase.name, func(t *testing.T) {
-			l := lexer.New(testcase.inputString)
+			l := lex.New(testcase.inputString)
 			_, err := l.ReadInput()
 			if (err != nil) != testcase.wantErr {
 				t.Fatalf("wantErr '%v', got '%+v', tokens: '%v'", testcase.wantErr, err, l.Tokens)
 			}
 			if !tokenSlicesMatch(l.Tokens, testcase.want) {
-				t.Fatal("types do not match", lexer.TokenNames(testcase.want), lexer.TokenNames(l.Tokens))
+				t.Fatal("types do not match", lex.TokenNames(testcase.want), lex.TokenNames(l.Tokens))
 			}
 		})
 	}

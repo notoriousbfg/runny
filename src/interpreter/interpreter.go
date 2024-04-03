@@ -4,16 +4,22 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runny/src/env"
+	"runny/src/lex"
+	"runny/src/parser"
 	"runny/src/token"
 	"runny/src/tree"
 	"strings"
 )
 
-func New(statements []tree.Statement) *Interpreter {
+func New(lexer *lex.Lexer, parser *parser.Parser, origin string) *Interpreter {
 	return &Interpreter{
 		Config:      make(map[string]interface{}, 0),
 		Environment: env.NewEnvironment(nil),
+		Origin:      origin,
+		Lexer:       lexer,
+		Parser:      parser,
 	}
 }
 
@@ -32,9 +38,11 @@ func (c Config) getShell() string {
 
 type Interpreter struct {
 	Config      Config
-	Extends     []string
 	Statements  []tree.Statement
+	Origin      string // the file path currently being read from
 	Environment *env.Environment
+	Lexer       *lex.Lexer
+	Parser      *parser.Parser
 }
 
 func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{}, err error) {
@@ -49,7 +57,8 @@ func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{
 			}
 		}
 	}()
-	for _, statement := range statements {
+	i.Statements = statements
+	for _, statement := range i.Statements {
 		result = append(result, i.Accept(statement))
 	}
 	return
@@ -120,9 +129,13 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 func (i *Interpreter) VisitExtendsStatement(stmt tree.ExtendsStatement) interface{} {
 	for _, path := range stmt.Paths {
 		evaluatedPath := path.Accept(i)
+		evaluatedPath = trimQuotes(evaluatedPath)
 		if pathStr, isString := evaluatedPath.(string); isString {
-			i.Extends = append(i.Extends, pathStr)
-			// TODO: ingest file
+			path := filepath.Join(filepath.Dir(i.Origin), pathStr)
+			err := i.Extend(path)
+			if err != nil {
+				panic(i.error(err.Error()))
+			}
 		} else {
 			panic(i.error(fmt.Sprintf("extends path %v is not a string", evaluatedPath)))
 		}
@@ -136,6 +149,32 @@ func (i *Interpreter) VisitExpressionStatement(stmt tree.ExpressionStatement) in
 
 func (i *Interpreter) VisitLiteralExpr(expr tree.Literal) interface{} {
 	return expr.Value
+}
+
+// TODO: this is very hacky and i intend to change it
+func (i *Interpreter) Extend(file string) error {
+	fileContents, err := os.ReadFile(file)
+	if err != nil {
+		return err
+	}
+	lexer := lex.New(string(fileContents))
+	tokens, err := lexer.ReadInput()
+	if err != nil {
+		return err
+	}
+
+	parser := parser.New(tokens)
+	statements, err := parser.Parse()
+	if err != nil {
+		return err
+	}
+
+	_, err = i.Evaluate(statements)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
@@ -161,19 +200,19 @@ func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
 	}
 }
 
+func (i *Interpreter) error(message string) *RuntimeError {
+	err := &RuntimeError{
+		Message: fmt.Sprintf("runtime error: %s\n", message),
+	}
+	return err
+}
+
 type RuntimeError struct {
 	Message string
 }
 
 func (re *RuntimeError) Error() string {
 	return re.Message
-}
-
-func (i *Interpreter) error(message string) *RuntimeError {
-	err := &RuntimeError{
-		Message: fmt.Sprintf("runtime error: %s\n", message),
-	}
-	return err
 }
 
 func runShellCommand(cmdString string, variables map[string]interface{}, shell string) []byte {

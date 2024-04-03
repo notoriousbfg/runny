@@ -1,5 +1,5 @@
 extends {
-    "./parent.rny"
+    "parent.rny"
 }
 
 run sayhello {
