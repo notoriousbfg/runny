@@ -17,6 +17,7 @@ const (
 	TARGET
 	RUN
 	CONFIG
+	EXTENDS
 
 	NEWLINE
 	NONE
@@ -34,10 +35,11 @@ var TokenTypeNames = map[TokenType]string{
 	COMMENT:    "COMMENT",
 	SCRIPT:     "SCRIPT",
 
-	VAR:    "VAR",
-	TARGET: "TARGET",
-	RUN:    "RUN",
-	CONFIG: "CONFIG",
+	VAR:     "VAR",
+	TARGET:  "TARGET",
+	RUN:     "RUN",
+	CONFIG:  "CONFIG",
+	EXTENDS: "EXTENDS",
 
 	NEWLINE: "NEWLINE",
 	NONE:    "NONE",
@@ -45,10 +47,11 @@ var TokenTypeNames = map[TokenType]string{
 }
 
 var Keywords = map[string]TokenType{
-	"var":    VAR,
-	"target": TARGET,
-	"run":    RUN,
-	"config": CONFIG,
+	"var":     VAR,
+	"target":  TARGET,
+	"run":     RUN,
+	"config":  CONFIG,
+	"extends": EXTENDS,
 }
 
 type Token struct {
@@ -58,13 +61,3 @@ type Token struct {
 	Line     int
 	Depth    int
 }
-
-// func (t Token) String() string {
-// 	switch {
-// 	case t.Type == EOF:
-// 		return "EOF"
-// 	case len(t.Text) > 50:
-// 		return fmt.Sprintf("%.10q...", t.Text)
-// 	}
-// 	return fmt.Sprintf("%q", t.Text)
-// }

@@ -32,11 +32,23 @@ func (c Config) getShell() string {
 
 type Interpreter struct {
 	Config      Config
+	Extends     []string
 	Statements  []tree.Statement
 	Environment *env.Environment
 }
 
-func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{}) {
+func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{}, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if str, ok := r.(string); ok {
+				err = fmt.Errorf(str)
+			} else if e, ok := r.(error); ok {
+				err = e
+			} else {
+				err = fmt.Errorf("unknown panic: %v", r)
+			}
+		}
+	}()
 	for _, statement := range statements {
 		result = append(result, i.Accept(statement))
 	}
@@ -90,7 +102,7 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 	if stmt.Name != (token.Token{}) {
 		targetBodyInt, err := i.Environment.Get(stmt.Name.Text, env.VTTarget)
 		if err != nil {
-			panic(err)
+			panic(i.error(stmt.Name, err.Error()))
 		}
 		if targetBody, ok := targetBodyInt.([]tree.Statement); ok {
 			// append contents of target onto end of body
@@ -102,6 +114,19 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 		i.Accept(statement)
 	}
 
+	return nil
+}
+
+func (i *Interpreter) VisitExtendsStatement(stmt tree.ExtendsStatement) interface{} {
+	for _, path := range stmt.Paths {
+		evaluatedPath := path.Accept(i)
+		if pathStr, isString := evaluatedPath.(string); isString {
+			i.Extends = append(i.Extends, pathStr)
+			// TODO: ingest file
+		} else {
+			// TODO: throw error
+		}
+	}
 	return nil
 }
 
@@ -134,6 +159,29 @@ func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
 	default:
 		return "", nil
 	}
+}
+
+type RuntimeError struct {
+	Message string
+}
+
+func (re *RuntimeError) Error() string {
+	return re.Message
+}
+
+func (i *Interpreter) error(thisToken token.Token, message string) *RuntimeError {
+	var where string
+	if thisToken.Type == token.EOF {
+		where = "at end"
+	} else if thisToken.Type == token.NEWLINE {
+		where = "at '\\n'"
+	} else {
+		where = "at '" + thisToken.Text + "'"
+	}
+	err := &RuntimeError{
+		Message: fmt.Sprintf("[line %d] runtime error %s: %s\n", thisToken.Line, where, message),
+	}
+	return err
 }
 
 func runShellCommand(cmdString string, variables map[string]interface{}, shell string) []byte {

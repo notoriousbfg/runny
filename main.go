@@ -42,7 +42,7 @@ func (r *Runny) Parse(tokens []token.Token) ([]tree.Statement, error) {
 	return statements, nil
 }
 
-func (r *Runny) Evaluate(statements []tree.Statement) {
+func (r *Runny) Evaluate(statements []tree.Statement) error {
 	if r.Config.Target != "" {
 		var foundTarget *tree.TargetStatement
 		filteredStatements := make([]tree.Statement, 0)
@@ -59,14 +59,15 @@ func (r *Runny) Evaluate(statements []tree.Statement) {
 		}
 		if foundTarget == nil {
 			fmt.Printf("target '%s' does not exist", r.Config.Target)
-			return
+			return nil
 		}
 		filteredStatements = append(filteredStatements, tree.RunStatement{
 			Name: foundTarget.Name,
 		})
 		statements = filteredStatements
 	}
-	r.Interpreter.Evaluate(statements)
+	_, err := r.Interpreter.Evaluate(statements)
+	return err
 }
 
 type Config struct {
@@ -81,7 +82,7 @@ func main() {
 	runny := Runny{
 		Config: Config{
 			Target: target,
-			Debug:  true,
+			Debug:  os.Getenv("DEBUG") == "true",
 		},
 	}
 
@@ -110,13 +111,12 @@ func main() {
 	}
 
 	runny.Interpreter = interpreter.New(statements)
-	// runny.Resolve(statements)
-	// if err != nil {
-	// 	fmt.Print(err)
-	// 	return
-	// }
 
-	runny.Evaluate(statements)
+	err = runny.Evaluate(statements)
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
 }
 
 func parseArgs() (string, string) {

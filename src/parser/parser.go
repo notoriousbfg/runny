@@ -50,6 +50,8 @@ func (p *Parser) declaration() tree.Statement {
 		return p.targetDeclaration()
 	} else if p.match(token.RUN) {
 		return p.runDeclaration()
+	} else if p.match(token.EXTENDS) {
+		return p.extendsDeclaration()
 	} else if p.check(token.SCRIPT) {
 		return p.actionStatement()
 	}
@@ -189,6 +191,32 @@ func (p *Parser) runDeclaration() tree.Statement {
 	p.reduceDepth()
 
 	return runDecl
+}
+
+func (p *Parser) extendsDeclaration() tree.Statement {
+	p.consume(token.LEFT_BRACE, "expect left brace")
+
+	depth := p.increaseDepth()
+
+	extends := tree.ExtendsStatement{}
+
+	for !p.isAtEnd() {
+		extends.Paths = append(extends.Paths, p.expression())
+
+		if p.check(token.COMMA) {
+			p.advance()
+		}
+
+		if p.check(token.RIGHT_BRACE) && depth == p.Depth {
+			break
+		}
+	}
+
+	p.consume(token.RIGHT_BRACE, "expect right brace")
+
+	p.reduceDepth()
+
+	return extends
 }
 
 func (p *Parser) actionStatement() tree.Statement {

@@ -1,0 +1,4 @@
+target sayhello {
+    run { echo "hello $name" }
+}
+

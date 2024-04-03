@@ -24,7 +24,7 @@ func TestInterpreter_Evaluate(t *testing.T) {
 			i := &Interpreter{
 				Environment: tt.fields.Environment,
 			}
-			if gotResult := i.Evaluate(tt.fields.Statements); !reflect.DeepEqual(gotResult, tt.wantResult) {
+			if gotResult, _ := i.Evaluate(tt.fields.Statements); !reflect.DeepEqual(gotResult, tt.wantResult) {
 				t.Errorf("Interpreter.Evaluate() = %v, want %v", gotResult, tt.wantResult)
 			}
 		})
