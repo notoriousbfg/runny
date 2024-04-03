@@ -102,7 +102,7 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 	if stmt.Name != (token.Token{}) {
 		targetBodyInt, err := i.Environment.Get(stmt.Name.Text, env.VTTarget)
 		if err != nil {
-			panic(i.error(stmt.Name, err.Error()))
+			panic(i.error(err.Error()))
 		}
 		if targetBody, ok := targetBodyInt.([]tree.Statement); ok {
 			// append contents of target onto end of body
@@ -124,7 +124,7 @@ func (i *Interpreter) VisitExtendsStatement(stmt tree.ExtendsStatement) interfac
 			i.Extends = append(i.Extends, pathStr)
 			// TODO: ingest file
 		} else {
-			// TODO: throw error
+			panic(i.error(fmt.Sprintf("extends path %v is not a string", evaluatedPath)))
 		}
 	}
 	return nil
@@ -169,17 +169,9 @@ func (re *RuntimeError) Error() string {
 	return re.Message
 }
 
-func (i *Interpreter) error(thisToken token.Token, message string) *RuntimeError {
-	var where string
-	if thisToken.Type == token.EOF {
-		where = "at end"
-	} else if thisToken.Type == token.NEWLINE {
-		where = "at '\\n'"
-	} else {
-		where = "at '" + thisToken.Text + "'"
-	}
+func (i *Interpreter) error(message string) *RuntimeError {
 	err := &RuntimeError{
-		Message: fmt.Sprintf("[line %d] runtime error %s: %s\n", thisToken.Line, where, message),
+		Message: fmt.Sprintf("runtime error: %s\n", message),
 	}
 	return err
 }
