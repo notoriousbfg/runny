@@ -2,8 +2,6 @@ config {
     shell "/bin/bash"
 }
 
-run hellogoodbye
-
 # this is a comment
 # this is another comment
 
@@ -24,3 +22,5 @@ target hellogoodbye {
     run { echo "${GREEN}hello $name" }
     run { echo "${YELLOW}goodbye $name" }
 }
+
+run hellogoodbye
