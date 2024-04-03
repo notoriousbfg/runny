@@ -89,9 +89,11 @@ func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{
 		variable, _ := i.lookupVariable(k)
 		evaluated[k] = variable
 	}
-	bytes := runShellCommand(stmt.Body.Text, evaluated, i.Config.getShell())
 	fmt.Println("\033[32m" + stmt.Body.Text + "\033[0m")
-	fmt.Print(string(bytes))
+	err := runShellCommandAndPipeToStdout(stmt.Body.Text, evaluated, i.Config.getShell())
+	if err != nil {
+		panic(i.error(fmt.Sprintf("could not run command: %s", err)))
+	}
 	return nil
 }
 
@@ -128,7 +130,6 @@ func (i *Interpreter) VisitExtendsStatement(stmt tree.ExtendsStatement) interfac
 		evaluatedPath = trimQuotes(evaluatedPath)
 		if pathStr, isString := evaluatedPath.(string); isString {
 			path := filepath.Join(filepath.Dir(i.Origin), pathStr)
-			// this creates an infinite loop
 			err := i.Extend(path)
 			if err != nil {
 				panic(i.error(err.Error()))
@@ -185,7 +186,7 @@ func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
 		var strBuilder strings.Builder
 		for _, action := range typedVal.Body {
 			if run, ok := action.(tree.ActionStatement); ok {
-				stdout := runShellCommand(run.Body.Text, nil, i.Config.getShell())
+				stdout := runShellCommandAndCapture(run.Body.Text, nil, i.Config.getShell())
 				strBuilder.Write(stdout)
 			}
 		}
@@ -212,7 +213,7 @@ func (re *RuntimeError) Error() string {
 	return re.Message
 }
 
-func runShellCommand(cmdString string, variables map[string]interface{}, shell string) []byte {
+func runShellCommandAndCapture(cmdString string, variables map[string]interface{}, shell string) []byte {
 	if len(cmdString) == 0 {
 		return []byte{}
 	}
@@ -226,6 +227,23 @@ func runShellCommand(cmdString string, variables map[string]interface{}, shell s
 	}
 	stdOutStdErr, _ := cmd.CombinedOutput()
 	return stdOutStdErr
+}
+
+func runShellCommandAndPipeToStdout(cmdString string, variables map[string]interface{}, shell string) error {
+	if len(cmdString) == 0 {
+		// todo
+	}
+	cmd := exec.Command(shell, "-c", cmdString)
+	cmd.Env = os.Environ()
+	for name, value := range variables {
+		cmd.Env = append(
+			cmd.Env,
+			fmt.Sprintf("%s=%s", name, trimQuotes(value)),
+		)
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 func trimQuotes(input interface{}) interface{} {

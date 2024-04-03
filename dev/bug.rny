@@ -8,7 +8,8 @@ target check-files {
 	run {
         for var in $files
         do
-            stat $var
+            echo $var
+            sleep 1
         done
     }
 }
