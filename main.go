@@ -121,15 +121,15 @@ func main() {
 		var foundTarget *tree.TargetStatement
 		filteredStatements := make([]tree.Statement, 0)
 		for _, statement := range statements {
-			if variable, isVariable := statement.(tree.VariableStatement); isVariable {
-				filteredStatements = append(filteredStatements, variable)
+			if _, isRun := statement.(tree.RunStatement); isRun {
+				continue
 			}
 			if target, isTarget := statement.(tree.TargetStatement); isTarget {
 				if target.Name.Text == runny.Config.Target {
 					foundTarget = &target
-					filteredStatements = append(filteredStatements, target)
 				}
 			}
+			filteredStatements = append(filteredStatements, statement)
 		}
 		if foundTarget == nil {
 			fmt.Printf("target '%s' does not exist", runny.Config.Target)
