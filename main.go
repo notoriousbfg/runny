@@ -97,8 +97,8 @@ func main() {
 	if err != nil {
 		fmt.Println("error reading file:", err)
 	}
-	lexer := lex.New(string(fileContents))
-	tokens, err := lexer.ReadInput()
+	lexer := lex.New()
+	tokens, err := lexer.ReadInput(string(fileContents))
 	if err != nil {
 		if runny.Config.Debug {
 			fmt.Print(err, ", (tokens:", lex.TokenNames(lexer.Tokens), ")")
@@ -109,14 +109,14 @@ func main() {
 	}
 
 	// i think we can condense the scan & parse stages into one by using a channel
-	parser := parser.New(tokens)
-	statements, err := parser.Parse()
+	parser := parser.New()
+	statements, err := parser.Parse(tokens)
 	if err != nil {
 		fmt.Print(err)
 		return
 	}
 
-	interpreter := interpreter.New(lexer, parser, file)
+	interpreter := interpreter.New(file)
 	if runny.Config.Target != "" {
 		var foundTarget *tree.TargetStatement
 		filteredStatements := make([]tree.Statement, 0)

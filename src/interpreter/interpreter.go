@@ -13,13 +13,11 @@ import (
 	"strings"
 )
 
-func New(lexer *lex.Lexer, parser *parser.Parser, origin string) *Interpreter {
+func New(origin string) *Interpreter {
 	return &Interpreter{
 		Config:      make(map[string]interface{}, 0),
 		Environment: env.NewEnvironment(nil),
 		Origin:      origin,
-		Lexer:       lexer,
-		Parser:      parser,
 	}
 }
 
@@ -41,8 +39,6 @@ type Interpreter struct {
 	Statements  []tree.Statement
 	Origin      string // the file path currently being read from
 	Environment *env.Environment
-	Lexer       *lex.Lexer
-	Parser      *parser.Parser
 }
 
 func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{}, err error) {
@@ -132,6 +128,7 @@ func (i *Interpreter) VisitExtendsStatement(stmt tree.ExtendsStatement) interfac
 		evaluatedPath = trimQuotes(evaluatedPath)
 		if pathStr, isString := evaluatedPath.(string); isString {
 			path := filepath.Join(filepath.Dir(i.Origin), pathStr)
+			// this creates an infinite loop
 			err := i.Extend(path)
 			if err != nil {
 				panic(i.error(err.Error()))
@@ -151,20 +148,20 @@ func (i *Interpreter) VisitLiteralExpr(expr tree.Literal) interface{} {
 	return expr.Value
 }
 
-// TODO: this is very hacky and i intend to change it
 func (i *Interpreter) Extend(file string) error {
 	fileContents, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
-	lexer := lex.New(string(fileContents))
-	tokens, err := lexer.ReadInput()
+
+	lexer := lex.New()
+	tokens, err := lexer.ReadInput(string(fileContents))
 	if err != nil {
 		return err
 	}
 
-	parser := parser.New(tokens)
-	statements, err := parser.Parse()
+	parser := parser.New()
+	statements, err := parser.Parse(tokens)
 	if err != nil {
 		return err
 	}

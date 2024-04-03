@@ -1,9 +1,10 @@
 extends {
-    "parent.rny"
+    "./parent.rny"
 }
 
-run sayhello {
-    var {
-        name "tim"
-    }
+var {
+    name "james"
 }
+
+run sayhello
+run saygoodbye

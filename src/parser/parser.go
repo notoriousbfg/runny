@@ -6,9 +6,8 @@ import (
 	"runny/src/tree"
 )
 
-func New(tokens []token.Token) *Parser {
+func New() *Parser {
 	return &Parser{
-		Tokens:     tokens,
 		Current:    0,
 		Depth:      0,
 		Statements: make([]tree.Statement, 0),
@@ -22,7 +21,8 @@ type Parser struct {
 	Statements []tree.Statement
 }
 
-func (p *Parser) Parse() (statements []tree.Statement, err error) {
+func (p *Parser) Parse(tokens []token.Token) (statements []tree.Statement, err error) {
+	p.Tokens = tokens
 	defer func() {
 		if r := recover(); r != nil {
 			if str, ok := r.(string); ok {
