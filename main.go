@@ -133,6 +133,7 @@ func main() {
 		}
 		if foundTarget == nil {
 			fmt.Printf("target '%s' does not exist", runny.Config.Target)
+			return
 		}
 		filteredStatements = append(filteredStatements, tree.RunStatement{
 			Name: foundTarget.Name,
