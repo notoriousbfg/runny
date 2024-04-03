@@ -94,7 +94,7 @@ func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{
 		evaluated[k] = variable
 	}
 	bytes := runShellCommand(stmt.Body.Text, evaluated, i.Config.getShell())
-	fmt.Println("\033[0m" + stmt.Body.Text)
+	fmt.Println("\033[32m" + stmt.Body.Text + "\033[0m")
 	fmt.Print(string(bytes))
 	return nil
 }
