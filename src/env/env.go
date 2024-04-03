@@ -18,6 +18,16 @@ func NewEnvironment(enclosing *Environment) *Environment {
 
 type ValueType int
 
+func (vt ValueType) String() string {
+	switch vt {
+	case VTVar:
+		return "variable"
+	case VTTarget:
+		return "target"
+	}
+	return "unknown"
+}
+
 const (
 	VTUnknown ValueType = iota
 	VTVar
@@ -72,7 +82,7 @@ func (e *Environment) Get(name string, valueType ValueType) (interface{}, error)
 			return e.Enclosing.Get(name, VTTarget)
 		}
 	}
-	return nil, fmt.Errorf("undefined variable '" + name + "'.")
+	return nil, fmt.Errorf("undefined %s '%s'", valueType, name)
 }
 
 func (e *Environment) GetAll(valueType ValueType) map[string]interface{} {

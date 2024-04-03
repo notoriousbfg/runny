@@ -1,7 +1,26 @@
-var {
-    name "tim"
+config {
+    shell "/bin/bash"
 }
 
-run {
-    echo "hello $name"
+run hellogoodbye
+
+# this is a comment
+# this is another comment
+
+var {
+    name "tim"
+
+    # this is another comment
+
+    GREEN {
+        run { tput -Txterm setaf 2 } # this is another comment
+    }
+    YELLOW {
+        run { tput -Txterm setaf 3 }
+    }
+}
+
+target hellogoodbye {
+    run { echo "${GREEN}hello $name" }
+    run { echo "${YELLOW}goodbye $name" }
 }

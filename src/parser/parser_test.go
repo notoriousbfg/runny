@@ -562,8 +562,8 @@ func TestStatements(t *testing.T) {
 
 	for _, testcase := range cases {
 		t.Run(testcase.name, func(t *testing.T) {
-			p := parser.New(testcase.tokens)
-			statements, err := p.Parse()
+			p := parser.New()
+			statements, err := p.Parse(testcase.tokens)
 			if (err != nil) != testcase.wantErr {
 				t.Fatalf("wantErr '%v', got '%+v', statements: '%v'", testcase.wantErr, err, p.Statements)
 			}

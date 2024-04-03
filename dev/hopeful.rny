@@ -1,3 +1,7 @@
+config {
+    shell "/bin/bash"
+}
+
 var {
     GREEN {
         run { tput -Txterm setaf 2 }

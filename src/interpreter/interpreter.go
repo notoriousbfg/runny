@@ -4,25 +4,57 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runny/src/env"
+	"runny/src/lex"
+	"runny/src/parser"
 	"runny/src/token"
 	"runny/src/tree"
 	"strings"
 )
 
-func New(statements []tree.Statement) *Interpreter {
+func New(origin string) *Interpreter {
 	return &Interpreter{
+		Config:      make(map[string]interface{}, 0),
 		Environment: env.NewEnvironment(nil),
+		Origin:      origin,
 	}
 }
 
+type Config map[string]interface{}
+
+func (c Config) getShell() string {
+	shell, ok := c["shell"]
+	if ok {
+		trimmedShell := trimQuotes(shell)
+		if shellStr, ok := trimmedShell.(string); ok {
+			return shellStr
+		}
+	}
+	return "sh"
+}
+
 type Interpreter struct {
+	Config      Config
 	Statements  []tree.Statement
+	Origin      string // the file path currently being read from
 	Environment *env.Environment
 }
 
-func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{}) {
-	for _, statement := range statements {
+func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{}, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if str, ok := r.(string); ok {
+				err = fmt.Errorf(str)
+			} else if e, ok := r.(error); ok {
+				err = e
+			} else {
+				err = fmt.Errorf("unknown panic: %v", r)
+			}
+		}
+	}()
+	i.Statements = statements
+	for _, statement := range i.Statements {
 		result = append(result, i.Accept(statement))
 	}
 	return
@@ -30,6 +62,13 @@ func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{
 
 func (i *Interpreter) Accept(statement tree.Statement) interface{} {
 	return statement.Accept(i)
+}
+
+func (i *Interpreter) VisitConfigStatement(stmt tree.ConfigStatement) interface{} {
+	for _, config := range stmt.Items {
+		i.Config[config.Name.Text] = i.Accept(config.Initialiser)
+	}
+	return nil
 }
 
 func (i *Interpreter) VisitVariableStatement(stmt tree.VariableStatement) interface{} {
@@ -50,7 +89,8 @@ func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{
 		variable, _ := i.lookupVariable(k)
 		evaluated[k] = variable
 	}
-	bytes := runShellCommand(stmt.Body.Text, evaluated)
+	bytes := runShellCommand(stmt.Body.Text, evaluated, i.Config.getShell())
+	fmt.Println("\033[32m" + stmt.Body.Text + "\033[0m")
 	fmt.Print(string(bytes))
 	return nil
 }
@@ -67,7 +107,7 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 	if stmt.Name != (token.Token{}) {
 		targetBodyInt, err := i.Environment.Get(stmt.Name.Text, env.VTTarget)
 		if err != nil {
-			panic(err)
+			panic(i.error(err.Error()))
 		}
 		if targetBody, ok := targetBodyInt.([]tree.Statement); ok {
 			// append contents of target onto end of body
@@ -82,35 +122,56 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 	return nil
 }
 
+func (i *Interpreter) VisitExtendsStatement(stmt tree.ExtendsStatement) interface{} {
+	for _, path := range stmt.Paths {
+		evaluatedPath := path.Accept(i)
+		evaluatedPath = trimQuotes(evaluatedPath)
+		if pathStr, isString := evaluatedPath.(string); isString {
+			path := filepath.Join(filepath.Dir(i.Origin), pathStr)
+			// this creates an infinite loop
+			err := i.Extend(path)
+			if err != nil {
+				panic(i.error(err.Error()))
+			}
+		} else {
+			panic(i.error(fmt.Sprintf("extends path %v is not a string", evaluatedPath)))
+		}
+	}
+	return nil
+}
+
 func (i *Interpreter) VisitExpressionStatement(stmt tree.ExpressionStatement) interface{} {
 	return stmt.Expression.Accept(i)
 }
 
-// func (i *Interpreter) VisitVariableExpr(expr tree.VariableExpression) interface{} {
-// 	val, err := i.lookupVariable(expr.Name.Text)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	switch typedVal := val.(type) {
-// 	// if run statement evaluate its actions now
-// 	case tree.RunStatement:
-// 		var strBuilder strings.Builder
-// 		for _, action := range typedVal.Body {
-// 			if run, ok := action.(tree.ActionStatement); ok {
-// 				stdout := runShellCommand(run.Body.Text, nil)
-// 				strBuilder.Write(stdout)
-// 			}
-// 		}
-// 		return strBuilder.String()
-// 	case tree.Statement:
-// 		return i.Accept(typedVal)
-// 	default:
-// 		return ""
-// 	}
-// }
-
 func (i *Interpreter) VisitLiteralExpr(expr tree.Literal) interface{} {
 	return expr.Value
+}
+
+func (i *Interpreter) Extend(file string) error {
+	fileContents, err := os.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	lexer := lex.New()
+	tokens, err := lexer.ReadInput(string(fileContents))
+	if err != nil {
+		return err
+	}
+
+	parser := parser.New()
+	statements, err := parser.Parse(tokens)
+	if err != nil {
+		return err
+	}
+
+	_, err = i.Evaluate(statements)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
@@ -124,7 +185,7 @@ func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
 		var strBuilder strings.Builder
 		for _, action := range typedVal.Body {
 			if run, ok := action.(tree.ActionStatement); ok {
-				stdout := runShellCommand(run.Body.Text, nil)
+				stdout := runShellCommand(run.Body.Text, nil, i.Config.getShell())
 				strBuilder.Write(stdout)
 			}
 		}
@@ -136,11 +197,26 @@ func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
 	}
 }
 
-func runShellCommand(cmdString string, variables map[string]interface{}) []byte {
+func (i *Interpreter) error(message string) *RuntimeError {
+	err := &RuntimeError{
+		Message: fmt.Sprintf("runtime error: %s\n", message),
+	}
+	return err
+}
+
+type RuntimeError struct {
+	Message string
+}
+
+func (re *RuntimeError) Error() string {
+	return re.Message
+}
+
+func runShellCommand(cmdString string, variables map[string]interface{}, shell string) []byte {
 	if len(cmdString) == 0 {
 		return []byte{}
 	}
-	cmd := exec.Command("sh", "-c", cmdString)
+	cmd := exec.Command(shell, "-c", cmdString)
 	cmd.Env = os.Environ()
 	for name, value := range variables {
 		cmd.Env = append(

@@ -53,3 +53,8 @@ By default it will look for a `runny.rny` file, or you can specify the path to a
 ```
 runny -f {path to file.rny}
 ```
+
+## Ongoing Development
+runny is the first (working) language I've written. Much of its inner workings are based on lox, from the wonderful book [Crafting Interpreters](https://craftinginterpreters.com).
+
+If you'd like to contribute to runny please do raise an issue or open a pull request. However, I can't promise that it will receive regular updates.

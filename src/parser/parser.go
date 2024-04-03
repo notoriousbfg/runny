@@ -6,9 +6,8 @@ import (
 	"runny/src/tree"
 )
 
-func New(tokens []token.Token) *Parser {
+func New() *Parser {
 	return &Parser{
-		Tokens:     tokens,
 		Current:    0,
 		Depth:      0,
 		Statements: make([]tree.Statement, 0),
@@ -22,7 +21,8 @@ type Parser struct {
 	Statements []tree.Statement
 }
 
-func (p *Parser) Parse() (statements []tree.Statement, err error) {
+func (p *Parser) Parse(tokens []token.Token) (statements []tree.Statement, err error) {
+	p.Tokens = tokens
 	defer func() {
 		if r := recover(); r != nil {
 			if str, ok := r.(string); ok {
@@ -42,16 +42,54 @@ func (p *Parser) Parse() (statements []tree.Statement, err error) {
 }
 
 func (p *Parser) declaration() tree.Statement {
-	if p.match(token.VAR) {
+	if p.match(token.CONFIG) {
+		return p.configDeclaration()
+	} else if p.match(token.VAR) {
 		return p.varDeclaration()
 	} else if p.match(token.TARGET) {
 		return p.targetDeclaration()
 	} else if p.match(token.RUN) {
 		return p.runDeclaration()
+	} else if p.match(token.EXTENDS) {
+		return p.extendsDeclaration()
 	} else if p.check(token.SCRIPT) {
 		return p.actionStatement()
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) configDeclaration() tree.Statement {
+	p.consume(token.LEFT_BRACE, "expect left brace")
+
+	depth := p.increaseDepth()
+
+	configDecl := tree.ConfigStatement{
+		Items: make([]tree.Config, 0),
+	}
+
+	for !p.isAtEnd() {
+		name := p.consume(token.IDENTIFIER, "expect config variable")
+		initialiser := p.declaration()
+
+		configDecl.Items = append(configDecl.Items, tree.Config{
+			Name:        name,
+			Initialiser: initialiser,
+		})
+
+		if p.check(token.COMMA) {
+			p.advance()
+		}
+
+		if p.check(token.RIGHT_BRACE) && depth == p.Depth {
+			break
+		}
+	}
+
+	p.consume(token.RIGHT_BRACE, "expect right brace")
+
+	p.reduceDepth()
+
+	return configDecl
 }
 
 func (p *Parser) varDeclaration() tree.Statement {
@@ -68,10 +106,8 @@ func (p *Parser) varDeclaration() tree.Statement {
 
 		var initialiser tree.Statement
 		if p.match(token.LEFT_BRACE) {
-			initialiser = p.declaration() // var is the output of an evaluated block e.g. var name { echo "tim" }
+			initialiser = p.declaration() // var is the output of an evaluated block e.g. var name { run { echo "tim" } }
 			p.consume(token.RIGHT_BRACE, "expect right brace")
-			// } else if p.match(token.IDENTIFIER) { // what was this for?
-			// p.advance()
 		} else {
 			initialiser = p.declaration()
 		}
@@ -143,8 +179,6 @@ func (p *Parser) runDeclaration() tree.Statement {
 
 	depth := p.increaseDepth()
 
-	// check if script exists here?
-
 	for !p.isAtEnd() {
 		runDecl.Body = append(runDecl.Body, p.declaration())
 		if p.check(token.RIGHT_BRACE) && depth == p.Depth {
@@ -157,6 +191,32 @@ func (p *Parser) runDeclaration() tree.Statement {
 	p.reduceDepth()
 
 	return runDecl
+}
+
+func (p *Parser) extendsDeclaration() tree.Statement {
+	p.consume(token.LEFT_BRACE, "expect left brace")
+
+	depth := p.increaseDepth()
+
+	extends := tree.ExtendsStatement{}
+
+	for !p.isAtEnd() {
+		extends.Paths = append(extends.Paths, p.expression())
+
+		if p.check(token.COMMA) {
+			p.advance()
+		}
+
+		if p.check(token.RIGHT_BRACE) && depth == p.Depth {
+			break
+		}
+	}
+
+	p.consume(token.RIGHT_BRACE, "expect right brace")
+
+	p.reduceDepth()
+
+	return extends
 }
 
 func (p *Parser) actionStatement() tree.Statement {

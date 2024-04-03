@@ -1,4 +1,4 @@
-package lexer
+package lex
 
 import (
 	"fmt"
@@ -8,44 +8,13 @@ import (
 	"unicode"
 )
 
-func New(input string) *Lexer {
+func New() *Lexer {
 	return &Lexer{
-		Input:   input,
 		Line:    1,
 		Start:   0,
 		Current: 0,
 		Depth:   0,
 		Context: Context{},
-	}
-}
-
-type Context struct {
-	Stack []token.TokenType
-}
-
-func (c *Context) current() token.TokenType {
-	if len(c.Stack) == 0 {
-		return token.NONE
-	}
-	if len(c.Stack) == 1 {
-		return c.Stack[0]
-	}
-	return c.Stack[len(c.Stack)-1] // last item
-}
-
-func (c *Context) setContext(t token.TokenType) {
-	c.Stack = append(c.Stack, t)
-}
-
-func (c *Context) replaceContext(t token.TokenType) {
-	c.resetContext()
-	c.setContext(t)
-}
-
-// trims last item
-func (c *Context) resetContext() {
-	if len(c.Stack) > 0 {
-		c.Stack = c.Stack[:len(c.Stack)-1]
 	}
 }
 
@@ -59,7 +28,8 @@ type Lexer struct {
 	Context Context
 }
 
-func (l *Lexer) ReadInput() ([]token.Token, error) {
+func (l *Lexer) ReadInput(input string) ([]token.Token, error) {
+	l.Input = input
 	for !l.isAtEnd() {
 		l.Start = l.Current
 		err := l.readChar()
@@ -90,6 +60,8 @@ func (l *Lexer) readChar() error {
 		l.addToken(token.COMMA, char)
 	case "$":
 		l.matchIdentifier()
+	case "#":
+		l.matchComment()
 	case "\n":
 		l.Line++
 	case " ", "\r", "\t":
@@ -151,6 +123,12 @@ func (l *Lexer) peek() string {
 		return ""
 	}
 	return string(l.Input[l.Current])
+}
+
+func (l *Lexer) matchComment() {
+	for !l.isAtEnd() && l.peek() != "\n" {
+		l.nextChar()
+	}
 }
 
 func (l *Lexer) matchScript() {
@@ -237,6 +215,36 @@ func (l *Lexer) error(ch string, message string) *LexError {
 	return err
 }
 
+type Context struct {
+	Stack []token.TokenType
+}
+
+func (c *Context) current() token.TokenType {
+	if len(c.Stack) == 0 {
+		return token.NONE
+	}
+	if len(c.Stack) == 1 {
+		return c.Stack[0]
+	}
+	return c.Stack[len(c.Stack)-1] // last item
+}
+
+func (c *Context) setContext(t token.TokenType) {
+	c.Stack = append(c.Stack, t)
+}
+
+func (c *Context) replaceContext(t token.TokenType) {
+	c.resetContext()
+	c.setContext(t)
+}
+
+// trims last item
+func (c *Context) resetContext() {
+	if len(c.Stack) > 0 {
+		c.Stack = c.Stack[:len(c.Stack)-1]
+	}
+}
+
 func TokenNames(types []token.Token) []string {
 	var typeNames []string
 	for _, t := range types {
@@ -277,8 +285,8 @@ func isAllowedIdentChar(ch string) bool {
 
 // helpful for creating parser tests
 func TokenGenerator(input string) {
-	lexer := New(input)
-	tokens, err := lexer.ReadInput()
+	lexer := New()
+	tokens, err := lexer.ReadInput(input)
 	if err != nil {
 		fmt.Println(err)
 	}

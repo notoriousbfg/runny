@@ -1,0 +1,10 @@
+extends {
+    "./parent.rny"
+}
+
+var {
+    name "james"
+}
+
+run sayhello
+run saygoodbye

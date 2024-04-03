@@ -5,69 +5,70 @@ import (
 	"os"
 	"path/filepath"
 	"runny/src/interpreter"
-	"runny/src/lexer"
+	"runny/src/lex"
 	"runny/src/parser"
-	"runny/src/token"
 	"runny/src/tree"
 	"strings"
 )
 
 type Runny struct {
-	Lexer       *lexer.Lexer
-	Parser      *parser.Parser
-	Interpreter *interpreter.Interpreter
-	Config      Config
+	// Lexer       *lexer.Lexer
+	// Parser      *parser.Parser
+	// Interpreter *interpreter.Interpreter
+	Config Config
 }
 
-func (r *Runny) Scan() ([]token.Token, error) {
-	var err error
-	fileContents, err := os.ReadFile(r.Config.File)
-	if err != nil {
-		return []token.Token{}, err
-	}
-	r.Lexer = lexer.New(string(fileContents))
-	tokens, err := r.Lexer.ReadInput()
-	if err != nil {
-		return []token.Token{}, err
-	}
-	return tokens, nil
-}
+// func (r *Runny) Scan() ([]token.Token, error) {
+// var err error
+// fileContents, err := os.ReadFile(r.Config.File)
+// if err != nil {
+// 	return []token.Token{}, err
+// }
+// r.Lexer = lexer.New(string(fileContents))
+// tokens, err := r.Lexer.ReadInput()
+// if err != nil {
+// 	return []token.Token{}, err
+// }
+// return tokens, nil
+// }
 
-func (r *Runny) Parse(tokens []token.Token) ([]tree.Statement, error) {
-	r.Parser = parser.New(tokens)
-	statements, err := r.Parser.Parse()
-	if err != nil {
-		return []tree.Statement{}, err
-	}
-	return statements, nil
-}
+// func (r *Runny) Parse(tokens []token.Token) ([]tree.Statement, error) {
+// 	r.Parser = parser.New(tokens)
+// 	statements, err := r.Parser.Parse()
+// 	if err != nil {
+// 		return []tree.Statement{}, err
+// 	}
+// 	return statements, nil
+// }
 
-func (r *Runny) Evaluate(statements []tree.Statement) {
-	if r.Config.Target != "" {
-		var foundTarget *tree.TargetStatement
-		filteredStatements := make([]tree.Statement, 0)
-		for _, statement := range statements {
-			if variable, isVariable := statement.(tree.VariableStatement); isVariable {
-				filteredStatements = append(filteredStatements, variable)
-			}
-			if target, isTarget := statement.(tree.TargetStatement); isTarget {
-				if target.Name.Text == r.Config.Target {
-					foundTarget = &target
-					filteredStatements = append(filteredStatements, target)
-				}
-			}
-		}
-		if foundTarget == nil {
-			fmt.Printf("target '%s' does not exist", r.Config.Target)
-			return
-		}
-		filteredStatements = append(filteredStatements, tree.RunStatement{
-			Name: foundTarget.Name,
-		})
-		statements = filteredStatements
-	}
-	r.Interpreter.Evaluate(statements)
-}
+// func (r *Runny) Evaluate(statements []tree.Statement, lexer *lexer.Lexer, parser *parser.Parser) error {
+// r.Interpreter = interpreter.New(lexer, parser)
+// if r.Config.Target != "" {
+// 	var foundTarget *tree.TargetStatement
+// 	filteredStatements := make([]tree.Statement, 0)
+// 	for _, statement := range statements {
+// 		if variable, isVariable := statement.(tree.VariableStatement); isVariable {
+// 			filteredStatements = append(filteredStatements, variable)
+// 		}
+// 		if target, isTarget := statement.(tree.TargetStatement); isTarget {
+// 			if target.Name.Text == r.Config.Target {
+// 				foundTarget = &target
+// 				filteredStatements = append(filteredStatements, target)
+// 			}
+// 		}
+// 	}
+// 	if foundTarget == nil {
+// 		fmt.Printf("target '%s' does not exist", r.Config.Target)
+// 		return nil
+// 	}
+// 	filteredStatements = append(filteredStatements, tree.RunStatement{
+// 		Name: foundTarget.Name,
+// 	})
+// 	statements = filteredStatements
+// }
+// _, err := r.Interpreter.Evaluate(statements)
+// 	return err
+// }
 
 type Config struct {
 	Target string
@@ -81,7 +82,7 @@ func main() {
 	runny := Runny{
 		Config: Config{
 			Target: target,
-			Debug:  true,
+			Debug:  os.Getenv("DEBUG") == "true",
 		},
 	}
 
@@ -92,10 +93,15 @@ func main() {
 	}
 	runny.Config.File = file
 
-	tokens, err := runny.Scan()
+	fileContents, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("error reading file:", err)
+	}
+	lexer := lex.New()
+	tokens, err := lexer.ReadInput(string(fileContents))
 	if err != nil {
 		if runny.Config.Debug {
-			fmt.Print(err, ", (tokens:", lexer.TokenNames(runny.Lexer.Tokens), ")")
+			fmt.Print(err, ", (tokens:", lex.TokenNames(lexer.Tokens), ")")
 		} else {
 			fmt.Print(err)
 		}
@@ -103,20 +109,41 @@ func main() {
 	}
 
 	// i think we can condense the scan & parse stages into one by using a channel
-	statements, err := runny.Parse(tokens)
+	parser := parser.New()
+	statements, err := parser.Parse(tokens)
 	if err != nil {
 		fmt.Print(err)
 		return
 	}
 
-	runny.Interpreter = interpreter.New(statements)
-	// runny.Resolve(statements)
-	// if err != nil {
-	// 	fmt.Print(err)
-	// 	return
-	// }
-
-	runny.Evaluate(statements)
+	interpreter := interpreter.New(file)
+	if runny.Config.Target != "" {
+		var foundTarget *tree.TargetStatement
+		filteredStatements := make([]tree.Statement, 0)
+		for _, statement := range statements {
+			if variable, isVariable := statement.(tree.VariableStatement); isVariable {
+				filteredStatements = append(filteredStatements, variable)
+			}
+			if target, isTarget := statement.(tree.TargetStatement); isTarget {
+				if target.Name.Text == runny.Config.Target {
+					foundTarget = &target
+					filteredStatements = append(filteredStatements, target)
+				}
+			}
+		}
+		if foundTarget == nil {
+			fmt.Printf("target '%s' does not exist", runny.Config.Target)
+		}
+		filteredStatements = append(filteredStatements, tree.RunStatement{
+			Name: foundTarget.Name,
+		})
+		statements = filteredStatements
+	}
+	_, err = interpreter.Evaluate(statements)
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
 }
 
 func parseArgs() (string, string) {
