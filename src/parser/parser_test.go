@@ -12,7 +12,7 @@ type StatementCase struct {
 	name    string
 	tokens  []token.Token
 	want    []tree.Statement
-	wantErr bool
+	wantErr string
 }
 
 func TestStatements(t *testing.T) {
@@ -558,21 +558,97 @@ func TestStatements(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "config declaration",
+			tokens: []token.Token{
+				{Type: token.CONFIG, Text: "config"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.IDENTIFIER, Text: "shell"},
+				{Type: token.STRING, Text: "/bin/bash"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+			want: []tree.Statement{
+				tree.ConfigStatement{
+					Items: []tree.Config{
+						{
+							Name: token.Token{
+								Type: token.IDENTIFIER,
+								Text: "shell",
+							},
+							Initialiser: tree.ExpressionStatement{
+								Expression: tree.Literal{
+									Value: "/bin/bash",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "extends declaration",
+			tokens: []token.Token{
+				{Type: token.EXTENDS, Text: "extends"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.STRING, Text: "/some/path"},
+				{Type: token.COMMA, Text: ","},
+				{Type: token.STRING, Text: "/another/path"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+			want: []tree.Statement{
+				tree.ExtendsStatement{
+					Paths: []tree.Expression{
+						tree.Literal{
+							Value: "/some/path",
+						},
+						tree.Literal{
+							Value: "/another/path",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, testcase := range cases {
 		t.Run(testcase.name, func(t *testing.T) {
 			p := parser.New()
 			statements, err := p.Parse(testcase.tokens)
-			if (err != nil) != testcase.wantErr {
+			if err != nil && err.Error() != testcase.wantErr {
+				t.Fatalf("wantErr '%v', got '%+v', statements: '%v'", testcase.wantErr, err, statements)
+			}
+			if !reflect.DeepEqual(testcase.want, statements) {
+				t.Fatalf("expressions do not match: expected: %+v, actual: %+v", testcase.want, statements)
+			}
+		})
+	}
+}
+
+func TestParserErrors(t *testing.T) {
+	cases := []StatementCase{
+		{
+			name: "variable declaration: missing identifier",
+			tokens: []token.Token{
+				{Type: token.VAR, Text: "var"},
+				{Type: token.LEFT_BRACE, Text: "{"},
+				{Type: token.STRING, Text: "Tim"},
+				{Type: token.RIGHT_BRACE, Text: "}"},
+				{Type: token.EOF, Text: ""},
+			},
+			wantErr: "[line 0] parse error at 'Tim': expect variable name\n",
+		},
+	}
+
+	for _, testcase := range cases {
+		t.Run(testcase.name, func(t *testing.T) {
+			p := parser.New()
+			statements, err := p.Parse(testcase.tokens)
+			if err != nil && err.Error() != testcase.wantErr {
 				t.Fatalf("wantErr '%v', got '%+v', statements: '%v'", testcase.wantErr, err, p.Statements)
 			}
 			if !reflect.DeepEqual(testcase.want, statements) {
-				// wantJson, _ := json.Marshal(testcase.want)
-				// stmtJson, _ := json.Marshal(p.Statements)
-				// fmt.Println(string(wantJson))
-				// fmt.Println(string(stmtJson))
-
 				t.Fatalf("expressions do not match: expected: %+v, actual: %+v", testcase.want, statements)
 			}
 		})
