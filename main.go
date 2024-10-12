@@ -14,10 +14,53 @@ type Runny struct {
 	Config Config
 }
 
+func (r *Runny) Run() {
+	fileContents, err := os.ReadFile(r.Config.File)
+	if err != nil {
+		fmt.Println("error reading file:", err)
+	}
+
+	lexer := lex.New()
+	tokens, err := lexer.ReadInput(string(fileContents))
+	if err != nil {
+		if r.Config.Debug {
+			fmt.Print(err, ", (tokens:", lex.TokenNames(lexer.Tokens), ")")
+		} else {
+			fmt.Print(err)
+		}
+		return
+	}
+
+	// i think we can condense the scan & parse stages into one by using a channel
+	parser := parser.New()
+	statements, err := parser.Parse(tokens)
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
+
+	interpreter := interpreter.New(r.Config.File, !r.Config.Testing)
+	if r.Config.Target != "" {
+		var err error
+		statements, err = interpreter.FilterStatementsByTarget(r.Config.Target, statements)
+		if err != nil {
+			fmt.Print(err)
+			return
+		}
+	}
+
+	_, err = interpreter.Evaluate(statements)
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
+}
+
 type Config struct {
-	Target string
-	File   string
-	Debug  bool
+	Target  string
+	File    string
+	Debug   bool
+	Testing bool
 }
 
 func main() {
@@ -37,43 +80,7 @@ func main() {
 	}
 	runny.Config.File = file
 
-	fileContents, err := os.ReadFile(file)
-	if err != nil {
-		fmt.Println("error reading file:", err)
-	}
-	lexer := lex.New()
-	tokens, err := lexer.ReadInput(string(fileContents))
-	if err != nil {
-		if runny.Config.Debug {
-			fmt.Print(err, ", (tokens:", lex.TokenNames(lexer.Tokens), ")")
-		} else {
-			fmt.Print(err)
-		}
-		return
-	}
-
-	// i think we can condense the scan & parse stages into one by using a channel
-	parser := parser.New()
-	statements, err := parser.Parse(tokens)
-	if err != nil {
-		fmt.Print(err)
-		return
-	}
-
-	interpreter := interpreter.New(file)
-	if runny.Config.Target != "" {
-		var err error
-		statements, err = interpreter.FilterStatementsByTarget(runny.Config.Target, statements)
-		if err != nil {
-			fmt.Print(err)
-			return
-		}
-	}
-	_, err = interpreter.Evaluate(statements)
-	if err != nil {
-		fmt.Print(err)
-		return
-	}
+	runny.Run()
 }
 
 func parseArgs() (string, string) {
@@ -94,6 +101,7 @@ func parseArgs() (string, string) {
 	if fileFlag == "" {
 		fileFlag = "runny.rny"
 	}
+
 	return target, fileFlag
 }
 

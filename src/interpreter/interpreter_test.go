@@ -17,7 +17,7 @@ const (
 
 func TestInterpreter_VisitRunStatement(t *testing.T) {
 	t.Run("simple command printed & executed accurately", func(t *testing.T) {
-		i := New(origin)
+		i := New(origin, true)
 		output, _ := captureOutput(func() error {
 			i.VisitRunStatement(tree.RunStatement{
 				Body: []tree.Statement{
@@ -40,7 +40,7 @@ hello world
 
 func TestInterpreter_VisitConfigStatement(t *testing.T) {
 	t.Run("config variables are set", func(t *testing.T) {
-		i := New(origin)
+		i := New(origin, true)
 		i.VisitConfigStatement(tree.ConfigStatement{
 			Items: []tree.Config{
 				{
@@ -60,7 +60,7 @@ func TestInterpreter_VisitConfigStatement(t *testing.T) {
 
 func TestInterpreter_VisitDescribeStatement(t *testing.T) {
 	t.Run("description statement printed", func(t *testing.T) {
-		i := New(origin)
+		i := New(origin, true)
 		output, _ := captureOutput(func() error {
 			i.VisitDescribeStatement(tree.DescribeStatement{
 				Lines: []tree.Literal{
@@ -74,7 +74,7 @@ func TestInterpreter_VisitDescribeStatement(t *testing.T) {
 		assert.Equal(t, "> the command does X\n", output)
 	})
 	t.Run("multiple description statements printed", func(t *testing.T) {
-		i := New(origin)
+		i := New(origin, true)
 		output, _ := captureOutput(func() error {
 			i.VisitDescribeStatement(tree.DescribeStatement{
 				Lines: []tree.Literal{

@@ -13,11 +13,12 @@ import (
 	"strings"
 )
 
-func New(origin string) *Interpreter {
+func New(origin string, printOutput bool) *Interpreter {
 	return &Interpreter{
 		Config:      make(map[string]interface{}, 0),
 		Environment: env.NewEnvironment(nil),
 		Origin:      origin,
+		PrintOutput: printOutput,
 	}
 }
 
@@ -39,6 +40,7 @@ type Interpreter struct {
 	Statements  []tree.Statement
 	Origin      string // the file path currently being read from
 	Environment *env.Environment
+	PrintOutput bool
 }
 
 func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{}, err error) {
@@ -112,6 +114,9 @@ const (
 )
 
 func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{} {
+	if !i.PrintOutput {
+		return nil
+	}
 	evaluated := make(map[string]interface{}, 0)
 	for k := range i.Environment.GetAll(env.VTVar) {
 		variable, _ := i.lookupVariable(k)
@@ -153,6 +158,9 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 }
 
 func (i *Interpreter) VisitDescribeStatement(stmt tree.DescribeStatement) interface{} {
+	if !i.PrintOutput {
+		return nil
+	}
 	for _, line := range stmt.Lines {
 		fmt.Printf("> %s\n", trimQuotes(line.Value))
 	}
