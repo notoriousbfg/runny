@@ -18,6 +18,7 @@ func New(origin string, printOutput bool) *Interpreter {
 		Config:      make(map[string]interface{}, 0),
 		Environment: env.NewEnvironment(nil),
 		Origin:      origin,
+		Printer:     &Printer{},
 		PrintOutput: printOutput,
 	}
 }
@@ -41,6 +42,7 @@ type Interpreter struct {
 	Origin      string // the file path currently being read from
 	Environment *env.Environment
 	PrintOutput bool
+	Printer     *Printer
 }
 
 func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{}, err error) {
@@ -58,6 +60,9 @@ func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{
 	i.Statements = statements
 	for _, statement := range i.Statements {
 		result = append(result, i.Accept(statement))
+	}
+	if i.PrintOutput {
+		i.Printer.Print()
 	}
 	return
 }
@@ -114,19 +119,30 @@ const (
 )
 
 func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{} {
-	if !i.PrintOutput {
-		return nil
-	}
 	evaluated := make(map[string]interface{}, 0)
 	for k := range i.Environment.GetAll(env.VTVar) {
 		variable, _ := i.lookupVariable(k)
 		evaluated[k] = variable
 	}
-	fmt.Println(foreColour + stmt.Body.Text + aftColour)
-	err := runShellCommandAndPipeToStdout(stmt.Body.Text, evaluated, i.Config.getShell())
+
+	i.Printer.PushStr(fmt.Sprintf("%s%s%s\n", foreColour, stmt.Body.Text, aftColour))
+
+	cmd := createCommand(stmt.Body.Text, evaluated, i.Config.getShell())
+
+	cmdOut, err := cmd.StdoutPipe()
 	if err != nil {
-		panic(i.error(fmt.Sprintf("could not run command: %s", err)))
+		panic(i.error(fmt.Sprintf("could not create command pipe: %s", err.Error())))
 	}
+
+	i.Printer.Push(Statement{
+		Cmd:    cmd,
+		StdOut: cmdOut,
+	})
+
+	if err := cmd.Start(); err != nil {
+		panic(i.error(fmt.Sprintf("could not run command: %s", err.Error())))
+	}
+
 	return nil
 }
 
@@ -158,11 +174,8 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 }
 
 func (i *Interpreter) VisitDescribeStatement(stmt tree.DescribeStatement) interface{} {
-	if !i.PrintOutput {
-		return nil
-	}
 	for _, line := range stmt.Lines {
-		fmt.Printf("> %s\n", trimQuotes(line.Value))
+		i.Printer.PushStr(fmt.Sprintf("> %s\n", trimQuotes(line.Value)))
 	}
 	return nil
 }
@@ -229,8 +242,9 @@ func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
 		var strBuilder strings.Builder
 		for _, action := range typedVal.Body {
 			if run, ok := action.(tree.ActionStatement); ok {
-				stdout := runShellCommandAndCapture(run.Body.Text, nil, i.Config.getShell())
-				strBuilder.Write(stdout)
+				cmd := createCommand(run.Body.Text, nil, i.Config.getShell())
+				stdOutStdErr, _ := cmd.CombinedOutput()
+				strBuilder.Write(stdOutStdErr)
 			}
 		}
 		return strBuilder.String(), nil
@@ -256,26 +270,37 @@ func (re *RuntimeError) Error() string {
 	return re.Message
 }
 
-func runShellCommandAndCapture(cmdString string, variables map[string]interface{}, shell string) []byte {
-	if len(cmdString) == 0 {
-		return []byte{}
-	}
-	cmd := exec.Command(shell, "-c", cmdString)
-	cmd.Env = os.Environ()
-	for name, value := range variables {
-		cmd.Env = append(
-			cmd.Env,
-			fmt.Sprintf("%s=%s", name, trimQuotes(value)),
-		)
-	}
-	stdOutStdErr, _ := cmd.CombinedOutput()
-	return stdOutStdErr
-}
+// func runShellCommandAndCapture(cmdString string, variables map[string]interface{}, shell string) []byte {
+// 	if len(cmdString) == 0 {
+// 		return []byte{}
+// 	}
+// 	cmd := exec.Command(shell, "-c", cmdString)
+// 	cmd.Env = os.Environ()
+// 	for name, value := range variables {
+// 		cmd.Env = append(
+// 			cmd.Env,
+// 			fmt.Sprintf("%s=%s", name, trimQuotes(value)),
+// 		)
+// 	}
+// 	stdOutStdErr, _ := cmd.CombinedOutput()
+// 	return stdOutStdErr
+// }
 
-func runShellCommandAndPipeToStdout(cmdString string, variables map[string]interface{}, shell string) error {
-	if len(cmdString) == 0 {
-		// todo
-	}
+// func runShellCommandAndPipeToStdout(cmdString string, variables map[string]interface{}, shell string) error {
+// cmd := exec.Command(shell, "-c", cmdString)
+// cmd.Env = os.Environ()
+// for name, value := range variables {
+// 	cmd.Env = append(
+// 		cmd.Env,
+// 		fmt.Sprintf("%s=%s", name, trimQuotes(value)),
+// 	)
+// }
+// 	cmd.Stdout = os.Stdout
+// 	cmd.Stderr = os.Stderr
+// 	return cmd.Run()
+// }
+
+func createCommand(cmdString string, variables map[string]interface{}, shell string) *exec.Cmd {
 	cmd := exec.Command(shell, "-c", cmdString)
 	cmd.Env = os.Environ()
 	for name, value := range variables {
@@ -284,9 +309,7 @@ func runShellCommandAndPipeToStdout(cmdString string, variables map[string]inter
 			fmt.Sprintf("%s=%s", name, trimQuotes(value)),
 		)
 	}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	return cmd
 }
 
 func trimQuotes(input interface{}) interface{} {

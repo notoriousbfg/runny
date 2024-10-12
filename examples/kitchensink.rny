@@ -16,7 +16,8 @@ var {
 # targets contain commands and scoped variables
 target hello_person {
     desc {
-        "say hello to a person"
+        "say hello to a person",
+        "$name, the name of the person to say hello to"
     }
     run {
         echo "hello $name"

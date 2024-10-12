@@ -64,7 +64,7 @@ extends {
 }
 ```
 
-Lastly, one can specify the shell you'd prefer to use with the `config` keyword.
+Lastly, you can specify the shell you'd prefer to use with the `config` keyword.
 ```
 config {
     shell "/bin/bash"
@@ -78,7 +78,7 @@ runny {my_target}
 
 By default runny will look for a `runny.rny` file or you can specify the path to a file with:
 ```
-runny -f {path to file.rny}
+runny -f {path-to-file}.rny
 ```
 
 ## Editor Support
