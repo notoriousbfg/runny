@@ -125,17 +125,19 @@ func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{
 		evaluated[k] = variable
 	}
 
+	// print command string (coloured)
 	i.Printer.PushStr(fmt.Sprintf("%s%s%s\n", foreColour, stmt.Body.Text, aftColour))
 
 	cmd := createCommand(stmt.Body.Text, evaluated, i.Config.getShell())
 
+	// creates a pipe to stdout that can be read by printer instance
 	cmdOut, err := cmd.StdoutPipe()
 	if err != nil {
 		panic(i.error(fmt.Sprintf("could not create command pipe: %s", err.Error())))
 	}
 
 	i.Printer.Push(Statement{
-		Cmd:    cmd,
+		Cmd:    cmd, // cmd included here so printer can wait
 		StdOut: cmdOut,
 	})
 
