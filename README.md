@@ -81,6 +81,9 @@ By default runny will look for a `runny.rny` file or you can specify the path to
 runny -f {path to file.rny}
 ```
 
+## Editor Support
+Currently Runny is supported in VSCode by installing the editor/runny-0.0.1.vsix file. Support will be added for other editors in the near future.
+
 ## Ongoing Development
 runny is the first (working) language I've written. Much of its inner workings are based on lox, from the wonderful book [Crafting Interpreters](https://craftinginterpreters.com).
 
