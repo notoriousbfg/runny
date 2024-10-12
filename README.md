@@ -12,7 +12,7 @@ var {
     name "Tim"
 }
 ```
-or runny can capture a script's stdout:
+or runny can capture a script's stdout with a `run` statement:
 ```
 var {
     name {
@@ -20,7 +20,8 @@ var {
     }
 }
 ```
-Variables that you define are created as environment variables in the shell.
+Variables are transferred to your environment.
+
 
 A `target` is for commands you want to run later:
 ```
@@ -30,10 +31,23 @@ target say_hello {
     }
 }
 ```
+Use the `desc` keyboard to describe your targets:
+```
+target say_hello {
+    desc {
+        "it says hello"
+    }
+    ...
+}
+```
 
-The `run` keyword (in addition to being how you execute shell commands) is how your targets are executed.
+The `run` keyword can be used to execute targets
 ```
 run say_hello
+```
+or to run arbitrary shell commands, which can also be the output of run statements themselves.
+```
+run { echo "hello world" }
 ```
 You can also define scoped variables within your run statement.
 ```
@@ -50,7 +64,7 @@ extends {
 }
 ```
 
-Lastly, can specify the shell you'd prefer to use with the `config` keyword.
+Lastly, one can specify the shell you'd prefer to use with the `config` keyword.
 ```
 config {
     shell "/bin/bash"
