@@ -106,13 +106,18 @@ func (i *Interpreter) VisitTargetStatement(stmt tree.TargetStatement) interface{
 	return nil
 }
 
+const (
+	foreColour = "\033[32m"
+	aftColour  = "\033[0m"
+)
+
 func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{} {
 	evaluated := make(map[string]interface{}, 0)
 	for k := range i.Environment.GetAll(env.VTVar) {
 		variable, _ := i.lookupVariable(k)
 		evaluated[k] = variable
 	}
-	fmt.Println("\033[32m" + stmt.Body.Text + "\033[0m")
+	fmt.Println(foreColour + stmt.Body.Text + aftColour)
 	err := runShellCommandAndPipeToStdout(stmt.Body.Text, evaluated, i.Config.getShell())
 	if err != nil {
 		panic(i.error(fmt.Sprintf("could not run command: %s", err)))

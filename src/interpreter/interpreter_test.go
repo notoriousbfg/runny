@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"runny/src/token"
@@ -13,6 +14,29 @@ import (
 const (
 	origin = "/origin/path"
 )
+
+func TestInterpreter_VisitRunStatement(t *testing.T) {
+	t.Run("simple command printed & executed accurately", func(t *testing.T) {
+		i := New(origin)
+		output, _ := captureOutput(func() error {
+			i.VisitRunStatement(tree.RunStatement{
+				Body: []tree.Statement{
+					tree.ActionStatement{
+						Body: token.Token{
+							Text: "echo \"hello world\"",
+						},
+					},
+				},
+			})
+			return nil
+		})
+		// hacky
+		expectedOutput := fmt.Sprintf(`%secho "hello world"%s
+hello world
+`, foreColour, aftColour)
+		assert.Equal(t, expectedOutput, output)
+	})
+}
 
 func TestInterpreter_VisitConfigStatement(t *testing.T) {
 	t.Run("config variables are set", func(t *testing.T) {
@@ -29,10 +53,8 @@ func TestInterpreter_VisitConfigStatement(t *testing.T) {
 				},
 			},
 		})
-		_, exists := i.Config["shell"]
-		if !exists {
-			t.Errorf("config value was not set")
-		}
+		assert.NotEmpty(t, i.Config["shell"], "config value was not set")
+		assert.Equal(t, i.Config["shell"], "/bin/zsh")
 	})
 }
 
