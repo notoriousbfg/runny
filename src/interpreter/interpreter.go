@@ -60,6 +60,29 @@ func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{
 	return
 }
 
+func (i *Interpreter) FilterStatementsByTarget(targetStr string, statements []tree.Statement) ([]tree.Statement, error) {
+	var foundTarget *tree.TargetStatement
+	filteredStatements := make([]tree.Statement, 0)
+	for _, statement := range statements {
+		if _, isRun := statement.(tree.RunStatement); isRun {
+			continue
+		}
+		if target, isTarget := statement.(tree.TargetStatement); isTarget {
+			if target.Name.Text == targetStr {
+				foundTarget = &target
+			}
+		}
+		filteredStatements = append(filteredStatements, statement)
+	}
+	if foundTarget == nil {
+		return nil, fmt.Errorf("target '%s' does not exist", targetStr)
+	}
+	filteredStatements = append(filteredStatements, tree.RunStatement{
+		Name: foundTarget.Name,
+	})
+	return filteredStatements, nil
+}
+
 func (i *Interpreter) Accept(statement tree.Statement) interface{} {
 	return statement.Accept(i)
 }

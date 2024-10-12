@@ -7,7 +7,6 @@ import (
 	"runny/src/interpreter"
 	"runny/src/lex"
 	"runny/src/parser"
-	"runny/src/tree"
 	"strings"
 )
 
@@ -63,27 +62,12 @@ func main() {
 
 	interpreter := interpreter.New(file)
 	if runny.Config.Target != "" {
-		var foundTarget *tree.TargetStatement
-		filteredStatements := make([]tree.Statement, 0)
-		for _, statement := range statements {
-			if _, isRun := statement.(tree.RunStatement); isRun {
-				continue
-			}
-			if target, isTarget := statement.(tree.TargetStatement); isTarget {
-				if target.Name.Text == runny.Config.Target {
-					foundTarget = &target
-				}
-			}
-			filteredStatements = append(filteredStatements, statement)
-		}
-		if foundTarget == nil {
-			fmt.Printf("target '%s' does not exist", runny.Config.Target)
+		var err error
+		statements, err = interpreter.FilterStatementsByTarget(runny.Config.Target, statements)
+		if err != nil {
+			fmt.Print(err)
 			return
 		}
-		filteredStatements = append(filteredStatements, tree.RunStatement{
-			Name: foundTarget.Name,
-		})
-		statements = filteredStatements
 	}
 	_, err = interpreter.Evaluate(statements)
 	if err != nil {

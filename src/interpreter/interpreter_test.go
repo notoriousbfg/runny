@@ -1,32 +1,33 @@
 package interpreter
 
 import (
-	"reflect"
-	"runny/src/env"
+	"runny/src/token"
 	"runny/src/tree"
 	"testing"
 )
 
-func TestInterpreter_Evaluate(t *testing.T) {
-	type fields struct {
-		Statements  []tree.Statement
-		Environment *env.Environment
-	}
-	tests := []struct {
-		name       string
-		fields     fields
-		wantResult []interface{}
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			i := &Interpreter{
-				Environment: tt.fields.Environment,
-			}
-			if gotResult, _ := i.Evaluate(tt.fields.Statements); !reflect.DeepEqual(gotResult, tt.wantResult) {
-				t.Errorf("Interpreter.Evaluate() = %v, want %v", gotResult, tt.wantResult)
-			}
+const (
+	origin = "/origin/path"
+)
+
+func TestInterpreter_VisitConfigStatement(t *testing.T) {
+	t.Run("config variables are set", func(t *testing.T) {
+		i := New(origin)
+		i.VisitConfigStatement(tree.ConfigStatement{
+			Items: []tree.Config{
+				{
+					Name: token.Token{Text: "shell", Type: token.STRING},
+					Initialiser: tree.ExpressionStatement{
+						Expression: tree.Literal{
+							Value: "/bin/zsh",
+						},
+					},
+				},
+			},
 		})
-	}
+		_, exists := i.Config["shell"]
+		if !exists {
+			t.Errorf("config value was not set")
+		}
+	})
 }
