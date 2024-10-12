@@ -18,6 +18,7 @@ const (
 	RUN
 	CONFIG
 	EXTENDS
+	DESCRIBE
 
 	NEWLINE
 	NONE
@@ -35,11 +36,12 @@ var TokenTypeNames = map[TokenType]string{
 	COMMENT:    "COMMENT",
 	SCRIPT:     "SCRIPT",
 
-	VAR:     "VAR",
-	TARGET:  "TARGET",
-	RUN:     "RUN",
-	CONFIG:  "CONFIG",
-	EXTENDS: "EXTENDS",
+	VAR:      "VAR",
+	TARGET:   "TARGET",
+	RUN:      "RUN",
+	CONFIG:   "CONFIG",
+	EXTENDS:  "EXTENDS",
+	DESCRIBE: "DESCRIBE",
 
 	NEWLINE: "NEWLINE",
 	NONE:    "NONE",
@@ -52,6 +54,7 @@ var Keywords = map[string]TokenType{
 	"run":     RUN,
 	"config":  CONFIG,
 	"extends": EXTENDS,
+	"desc":    DESCRIBE,
 }
 
 type Token struct {

@@ -6,8 +6,8 @@ config {
 
 target hello_name {
 	desc {
-		{ "this command does x & y" } 
-		{ "name", "the name of the user" }
+		"this command says hello to a name",
+		"$name, the name of the user"
 	}
 	var {
 		name "Tom"

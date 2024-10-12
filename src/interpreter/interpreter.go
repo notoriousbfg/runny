@@ -147,6 +147,13 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 	return nil
 }
 
+func (i *Interpreter) VisitDescribeStatement(stmt tree.DescribeStatement) interface{} {
+	for _, line := range stmt.Lines {
+		fmt.Printf("> %s\n", trimQuotes(line.Value))
+	}
+	return nil
+}
+
 func (i *Interpreter) VisitExtendsStatement(stmt tree.ExtendsStatement) interface{} {
 	for _, path := range stmt.Paths {
 		evaluatedPath := path.Accept(i)

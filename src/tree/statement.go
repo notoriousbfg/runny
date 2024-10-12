@@ -14,6 +14,7 @@ type StatementVisitor interface {
 	VisitTargetStatement(stmt TargetStatement) interface{}
 	VisitActionStatement(stmt ActionStatement) interface{}
 	VisitRunStatement(stmt RunStatement) interface{}
+	VisitDescribeStatement(stmt DescribeStatement) interface{}
 	VisitExtendsStatement(stmt ExtendsStatement) interface{}
 	VisitExpressionStatement(stmt ExpressionStatement) interface{}
 }
@@ -68,6 +69,15 @@ type RunStatement struct {
 
 func (rs RunStatement) Accept(visitor StatementVisitor) interface{} {
 	return visitor.VisitRunStatement(rs)
+}
+
+type DescribeStatement struct {
+	Name  token.Token
+	Lines []Literal
+}
+
+func (ds DescribeStatement) Accept(visitor StatementVisitor) interface{} {
+	return visitor.VisitDescribeStatement(ds)
 }
 
 type ExtendsStatement struct {

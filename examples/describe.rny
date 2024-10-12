@@ -1,0 +1,22 @@
+config {
+    shell "bash"
+}
+
+target hello_name {
+	desc {
+		"this command says hello to a name",
+		"$name, the name of the user"
+	}
+	var {
+		name "Tom"
+	}
+	run {
+		echo "hello $name"
+	}
+}
+
+run hello_name {
+    var {
+        name "Tim"
+    }
+}
