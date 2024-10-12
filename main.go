@@ -12,63 +12,8 @@ import (
 )
 
 type Runny struct {
-	// Lexer       *lexer.Lexer
-	// Parser      *parser.Parser
-	// Interpreter *interpreter.Interpreter
 	Config Config
 }
-
-// func (r *Runny) Scan() ([]token.Token, error) {
-// var err error
-// fileContents, err := os.ReadFile(r.Config.File)
-// if err != nil {
-// 	return []token.Token{}, err
-// }
-// r.Lexer = lexer.New(string(fileContents))
-// tokens, err := r.Lexer.ReadInput()
-// if err != nil {
-// 	return []token.Token{}, err
-// }
-// return tokens, nil
-// }
-
-// func (r *Runny) Parse(tokens []token.Token) ([]tree.Statement, error) {
-// 	r.Parser = parser.New(tokens)
-// 	statements, err := r.Parser.Parse()
-// 	if err != nil {
-// 		return []tree.Statement{}, err
-// 	}
-// 	return statements, nil
-// }
-
-// func (r *Runny) Evaluate(statements []tree.Statement, lexer *lexer.Lexer, parser *parser.Parser) error {
-// r.Interpreter = interpreter.New(lexer, parser)
-// if r.Config.Target != "" {
-// 	var foundTarget *tree.TargetStatement
-// 	filteredStatements := make([]tree.Statement, 0)
-// 	for _, statement := range statements {
-// 		if variable, isVariable := statement.(tree.VariableStatement); isVariable {
-// 			filteredStatements = append(filteredStatements, variable)
-// 		}
-// 		if target, isTarget := statement.(tree.TargetStatement); isTarget {
-// 			if target.Name.Text == r.Config.Target {
-// 				foundTarget = &target
-// 				filteredStatements = append(filteredStatements, target)
-// 			}
-// 		}
-// 	}
-// 	if foundTarget == nil {
-// 		fmt.Printf("target '%s' does not exist", r.Config.Target)
-// 		return nil
-// 	}
-// 	filteredStatements = append(filteredStatements, tree.RunStatement{
-// 		Name: foundTarget.Name,
-// 	})
-// 	statements = filteredStatements
-// }
-// _, err := r.Interpreter.Evaluate(statements)
-// 	return err
-// }
 
 type Config struct {
 	Target string
