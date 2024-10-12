@@ -125,7 +125,7 @@ func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{
 		evaluated[k] = variable
 	}
 
-	// print command string (coloured)
+	// print command string (highlighted)
 	i.Printer.PushStr(fmt.Sprintf("%s%s%s\n", foreColour, stmt.Body.Text, aftColour))
 
 	cmd := createCommand(stmt.Body.Text, evaluated, i.Config.getShell())
@@ -271,36 +271,6 @@ type RuntimeError struct {
 func (re *RuntimeError) Error() string {
 	return re.Message
 }
-
-// func runShellCommandAndCapture(cmdString string, variables map[string]interface{}, shell string) []byte {
-// 	if len(cmdString) == 0 {
-// 		return []byte{}
-// 	}
-// 	cmd := exec.Command(shell, "-c", cmdString)
-// 	cmd.Env = os.Environ()
-// 	for name, value := range variables {
-// 		cmd.Env = append(
-// 			cmd.Env,
-// 			fmt.Sprintf("%s=%s", name, trimQuotes(value)),
-// 		)
-// 	}
-// 	stdOutStdErr, _ := cmd.CombinedOutput()
-// 	return stdOutStdErr
-// }
-
-// func runShellCommandAndPipeToStdout(cmdString string, variables map[string]interface{}, shell string) error {
-// cmd := exec.Command(shell, "-c", cmdString)
-// cmd.Env = os.Environ()
-// for name, value := range variables {
-// 	cmd.Env = append(
-// 		cmd.Env,
-// 		fmt.Sprintf("%s=%s", name, trimQuotes(value)),
-// 	)
-// }
-// 	cmd.Stdout = os.Stdout
-// 	cmd.Stderr = os.Stderr
-// 	return cmd.Run()
-// }
 
 func createCommand(cmdString string, variables map[string]interface{}, shell string) *exec.Cmd {
 	cmd := exec.Command(shell, "-c", cmdString)
