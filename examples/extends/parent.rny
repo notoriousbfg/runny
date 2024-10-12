@@ -1,8 +1,0 @@
-target sayhello {
-    run { echo "hello $name" }
-}
-
-target saygoodbye {
-    run { echo "goodbye $name" }
-}
-

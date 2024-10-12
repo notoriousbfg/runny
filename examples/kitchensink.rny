@@ -1,0 +1,44 @@
+extends {
+    "./parent.rny"
+}
+
+# config can be used to set project-wide settings, like the shell you want to use
+config {
+    shell "/bin/bash"
+}
+
+# this is a comment
+# variables can store literals
+var {
+    name "Tim"
+}
+
+# targets contain commands and scoped variables
+target hello_person {
+    desc {
+        "say hello to a person"
+    }
+    run {
+        echo "hello $name"
+    }
+}
+
+# run can also be used to execute targets
+run hello_person
+
+# with its own scoped variables
+run hello_person {
+    var {
+        name "Sarah"
+    }
+}
+
+run hello_person {
+    var {
+        name {
+            run { echo "James" }
+        }
+    }
+}
+
+run say_goodbye

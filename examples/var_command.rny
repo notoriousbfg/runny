@@ -1,9 +1,0 @@
-var {
-    myName {
-        run { echo "tim" }
-    }
-}
-
-run {
-    echo "hello $myName"
-}

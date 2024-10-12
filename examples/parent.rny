@@ -1,0 +1,3 @@
+target say_goodbye {
+    run { echo "goodbye" }
+}
