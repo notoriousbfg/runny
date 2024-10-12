@@ -7,6 +7,9 @@ run hello_name {
 	run {
 		echo "hello tim"
 	}
+	run:after {
+		echo "run complete"
+	}
 }
 
 var {

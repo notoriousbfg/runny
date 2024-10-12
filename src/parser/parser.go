@@ -11,6 +11,7 @@ func New() *Parser {
 		Current:    0,
 		Depth:      0,
 		Statements: make([]tree.Statement, 0),
+		Context:    Context{},
 	}
 }
 
@@ -19,6 +20,7 @@ type Parser struct {
 	Current    int
 	Depth      int
 	Statements []tree.Statement
+	Context    Context
 }
 
 func (p *Parser) Parse(tokens []token.Token) (statements []tree.Statement, err error) {
@@ -100,8 +102,11 @@ func (p *Parser) varDeclaration() tree.Statement {
 	depth := p.increaseDepth()
 
 	varDecl := tree.VariableStatement{
-		Items: make([]tree.Variable, 0),
+		Items:  make([]tree.Variable, 0),
+		Parent: p.Context.current(),
 	}
+
+	p.Context.setContext(varDecl)
 
 	for !p.isAtEnd() {
 		name := p.consume(token.IDENTIFIER, "expect variable name")
@@ -130,6 +135,8 @@ func (p *Parser) varDeclaration() tree.Statement {
 
 	p.consume(token.RIGHT_BRACE, "expect right brace")
 
+	p.Context.resetContext()
+
 	p.reduceDepth()
 
 	return varDecl
@@ -143,9 +150,12 @@ func (p *Parser) targetDeclaration() tree.Statement {
 	depth := p.increaseDepth()
 
 	targetDecl := tree.TargetStatement{
-		Name: name,
-		Body: make([]tree.Statement, 0),
+		Name:   name,
+		Body:   make([]tree.Statement, 0),
+		Parent: p.Context.current(),
 	}
+
+	p.Context.setContext(targetDecl)
 
 	for !p.isAtEnd() {
 		body := p.declaration()
@@ -158,6 +168,8 @@ func (p *Parser) targetDeclaration() tree.Statement {
 
 	p.consume(token.RIGHT_BRACE, "expect right brace")
 
+	p.Context.resetContext()
+
 	p.reduceDepth()
 
 	return targetDecl
@@ -165,8 +177,11 @@ func (p *Parser) targetDeclaration() tree.Statement {
 
 func (p *Parser) runDeclaration() tree.Statement {
 	runDecl := tree.RunStatement{
-		Body: make([]tree.Statement, 0),
+		Body:   make([]tree.Statement, 0),
+		Parent: p.Context.current(),
 	}
+
+	p.Context.setContext(runDecl)
 
 	if p.check(token.IDENTIFIER) {
 		name := p.consume(token.IDENTIFIER, "expect target name")
@@ -190,6 +205,8 @@ func (p *Parser) runDeclaration() tree.Statement {
 
 	p.consume(token.RIGHT_BRACE, "expect right brace")
 
+	p.Context.resetContext()
+
 	p.reduceDepth()
 
 	return runDecl
@@ -201,8 +218,11 @@ func (p *Parser) describeDeclaration() tree.Statement {
 	depth := p.increaseDepth()
 
 	descDecl := tree.DescribeStatement{
-		Lines: make([]tree.Literal, 0),
+		Lines:  make([]tree.Literal, 0),
+		Parent: p.Context.current(),
 	}
+
+	p.Context.setContext(descDecl)
 
 	for !p.isAtEnd() {
 		initialiser := p.declaration()
@@ -232,6 +252,8 @@ func (p *Parser) describeDeclaration() tree.Statement {
 	}
 
 	p.consume(token.RIGHT_BRACE, "expect right brace")
+
+	p.Context.resetContext()
 
 	p.reduceDepth()
 
@@ -267,9 +289,12 @@ func (p *Parser) extendsDeclaration() tree.Statement {
 func (p *Parser) actionStatement() tree.Statement {
 	script := p.consume(token.SCRIPT, "expect action body")
 
-	return tree.ActionStatement{
-		Body: script,
+	actionStmt := tree.ActionStatement{
+		Body:   script,
+		Parent: p.Context.current(),
 	}
+
+	return actionStmt
 }
 
 func (p *Parser) expressionStatement() tree.Statement {
@@ -370,4 +395,34 @@ func (p *Parser) error(thisToken token.Token, message string) *ParseError {
 		Message: fmt.Sprintf("[line %d] parse error %s: %s\n", thisToken.Line, where, message),
 	}
 	return err
+}
+
+type Context struct {
+	Stack []tree.Statement
+}
+
+func (c *Context) current() tree.Statement {
+	if len(c.Stack) == 0 {
+		return nil
+	}
+	if len(c.Stack) == 1 {
+		return c.Stack[0]
+	}
+	return c.Stack[len(c.Stack)-1] // last item
+}
+
+func (c *Context) setContext(s tree.Statement) {
+	c.Stack = append(c.Stack, s)
+}
+
+func (c *Context) replaceContext(s tree.Statement) {
+	c.resetContext()
+	c.setContext(s)
+}
+
+// trims last item
+func (c *Context) resetContext() {
+	if len(c.Stack) > 0 {
+		c.Stack = c.Stack[:len(c.Stack)-1]
+	}
 }
