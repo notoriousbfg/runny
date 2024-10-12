@@ -1,0 +1,31 @@
+{
+	"scopeName": "source.rny",
+	"patterns": [
+		{
+			"name": "comment.line.number-sign.rny",
+			"match": "#.*$"
+		},
+		{
+			"name": "keyword.control.rny",
+			"match": "\\b(extends|config|var|target|desc|run)\\b"
+		},
+		{
+			"name": "entity.name.function.rny",
+			"match": "\\b[a-zA-Z_][a-zA-Z0-9_-]*\\b(?=\\s*\\{)"
+		},
+		{
+			"name": "string.quoted.double.rny",
+			"begin": "\"",
+			"end": "\""
+		},
+		{
+			"name": "variable.other.rny",
+			"match": "\\$[a-zA-Z_][a-zA-Z0-9_-]*"
+		},
+		{
+			"name": "constant.numeric.rny",
+			"match": "\\b[0-9]+\\b"
+		}
+	],
+	"repository": {}
+}

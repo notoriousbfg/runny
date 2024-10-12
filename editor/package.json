@@ -1,0 +1,33 @@
+{
+  "name": "editor",
+  "displayName": "Runny",
+  "description": "The Runny language",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.94.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "rny",
+        "aliases": [
+          "rny"
+        ],
+        "extensions": [
+          ".rny"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "rny",
+        "scopeName": "source.rny",
+        "path": "./syntaxes/runny.tmLanguage.json"
+      }
+    ]
+  }
+}
