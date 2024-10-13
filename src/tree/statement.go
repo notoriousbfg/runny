@@ -9,14 +9,14 @@ type Statement interface {
 }
 
 type StatementVisitor interface {
-	VisitConfigStatement(stmt ConfigStatement) interface{}
-	VisitVariableStatement(stmt VariableStatement) interface{}
-	VisitTargetStatement(stmt TargetStatement) interface{}
-	VisitActionStatement(stmt ActionStatement) interface{}
-	VisitRunStatement(stmt RunStatement) interface{}
-	VisitDescribeStatement(stmt DescribeStatement) interface{}
-	VisitExtendsStatement(stmt ExtendsStatement) interface{}
-	VisitExpressionStatement(stmt ExpressionStatement) interface{}
+	VisitConfigStatement(statement ConfigStatement) interface{}
+	VisitVariableStatement(statement VariableStatement) interface{}
+	VisitTargetStatement(statement TargetStatement) interface{}
+	VisitActionStatement(statement ActionStatement) interface{}
+	VisitRunStatement(statement RunStatement) interface{}
+	VisitDescribeStatement(statement DescribeStatement) interface{}
+	VisitExtendsStatement(statement ExtendsStatement) interface{}
+	VisitExpressionStatement(statement ExpressionStatement) interface{}
 }
 
 type ConfigStatement struct {
@@ -34,6 +34,7 @@ func (c ConfigStatement) Accept(visitor StatementVisitor) interface{} {
 
 type VariableStatement struct {
 	Items []Variable
+	Stage Stage
 }
 
 type Variable struct {
@@ -62,9 +63,18 @@ func (as ActionStatement) Accept(visitor StatementVisitor) interface{} {
 	return visitor.VisitActionStatement(as)
 }
 
+type Stage int
+
+const (
+	DURING Stage = iota
+	BEFORE
+	AFTER
+)
+
 type RunStatement struct {
-	Name token.Token
-	Body []Statement
+	Name  token.Token
+	Body  []Statement
+	Stage Stage
 }
 
 func (rs RunStatement) Accept(visitor StatementVisitor) interface{} {

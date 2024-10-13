@@ -1,22 +1,51 @@
-run hello_name {
-	var:before {
-		name {
-			echo "James"
-		}
+target hello_name {
+	run:before {
+		echo "before"
 	}
 	run {
-		echo "hello tim"
+		echo "Starting process..."
+		if [ -d "/path/to/directory" ]; then
+			echo "Directory exists. Proceeding with operation..."
+			for file in /path/to/directory/*; do
+				if [ -f "$file" ]; then
+					echo "Processing $file..."
+				fi
+			done
+		else
+			echo "Directory does not exist. Exiting..."
+			exit 1
+		fi
+		echo "Process complete."
+	}
+	run:after {
+		echo "after"
 	}
 }
 
-var {
-	morning false
-}
+run hello_name
 
-run {
-	if morning {
-		run { echo "good morning" }
-	} else {
-		run { echo "good afternoon" }
-	}
-}
+# run hello_name {
+# 	var:before {
+# 		name {
+# 			echo "James"
+# 		}
+# 	}
+# 	run {
+# 		echo "hello tim"
+# 	}
+# 	run:after {
+# 		echo "run complete"
+# 	}
+# }
+
+# var {
+# 	morning false
+# }
+
+# run {
+# 	if morning {
+# 		run { echo "good morning" }
+# 	} else {
+# 		run { echo "good afternoon" }
+# 	}
+# }

@@ -10,6 +10,7 @@ import (
 	"runny/src/parser"
 	"runny/src/token"
 	"runny/src/tree"
+	"sort"
 	"strings"
 )
 
@@ -18,6 +19,7 @@ func New(origin string, printOutput bool) *Interpreter {
 		Config:      make(map[string]interface{}, 0),
 		Environment: env.NewEnvironment(nil),
 		Origin:      origin,
+		Printer:     &Printer{},
 		PrintOutput: printOutput,
 	}
 }
@@ -41,6 +43,7 @@ type Interpreter struct {
 	Origin      string // the file path currently being read from
 	Environment *env.Environment
 	PrintOutput bool
+	Printer     *Printer
 }
 
 func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{}, err error) {
@@ -58,6 +61,9 @@ func (i *Interpreter) Evaluate(statements []tree.Statement) (result []interface{
 	i.Statements = statements
 	for _, statement := range i.Statements {
 		result = append(result, i.Accept(statement))
+	}
+	if i.PrintOutput {
+		i.Printer.Print()
 	}
 	return
 }
@@ -89,23 +95,43 @@ func (i *Interpreter) Accept(statement tree.Statement) interface{} {
 	return statement.Accept(i)
 }
 
-func (i *Interpreter) VisitConfigStatement(stmt tree.ConfigStatement) interface{} {
-	for _, config := range stmt.Items {
+func (i *Interpreter) VisitConfigStatement(statement tree.ConfigStatement) interface{} {
+	for _, config := range statement.Items {
 		i.Config[config.Name.Text] = i.Accept(config.Initialiser)
 	}
 	return nil
 }
 
-func (i *Interpreter) VisitVariableStatement(stmt tree.VariableStatement) interface{} {
-	for _, variable := range stmt.Items {
+func (i *Interpreter) VisitVariableStatement(statement tree.VariableStatement) interface{} {
+	for _, variable := range statement.Items {
 		i.Environment.Define(variable.Name.Text, env.VTVar, variable.Initialiser)
 	}
 	return nil
 }
 
-func (i *Interpreter) VisitTargetStatement(stmt tree.TargetStatement) interface{} {
-	i.Environment.Define(stmt.Name.Text, env.VTTarget, stmt.Body)
+func (i *Interpreter) VisitTargetStatement(statement tree.TargetStatement) interface{} {
+	// presort body by order
+	statements := statement.Body
+	sort.SliceStable(statements, func(i, j int) bool {
+		return orderValue(statements[i]) < orderValue(statements[j])
+	})
+	i.Environment.Define(statement.Name.Text, env.VTTarget, statements)
 	return nil
+}
+
+func orderValue(statement tree.Statement) int {
+	switch statementTyped := statement.(type) {
+	case tree.RunStatement:
+		switch statementTyped.Stage {
+		case tree.BEFORE:
+			return 1
+		case tree.DURING:
+			return 2
+		case tree.AFTER:
+			return 3
+		}
+	}
+	return 2
 }
 
 const (
@@ -113,34 +139,61 @@ const (
 	aftColour  = "\033[0m"
 )
 
-func (i *Interpreter) VisitActionStatement(stmt tree.ActionStatement) interface{} {
-	if !i.PrintOutput {
-		return nil
-	}
+func (i *Interpreter) VisitActionStatement(statement tree.ActionStatement) interface{} {
 	evaluated := make(map[string]interface{}, 0)
 	for k := range i.Environment.GetAll(env.VTVar) {
 		variable, _ := i.lookupVariable(k)
 		evaluated[k] = variable
 	}
-	fmt.Println(foreColour + stmt.Body.Text + aftColour)
-	err := runShellCommandAndPipeToStdout(stmt.Body.Text, evaluated, i.Config.getShell())
+
+	// print command string (highlighted)
+	i.Printer.PushStr(fmt.Sprintf("%s%s%s\n", foreColour, relativeDedent(statement.Body.Text), aftColour))
+
+	cmd := createCommand(statement.Body.Text, evaluated, i.Config.getShell())
+
+	// creates a pipe to stdout that can be read by printer instance
+	cmdOut, err := cmd.StdoutPipe()
 	if err != nil {
-		panic(i.error(fmt.Sprintf("could not run command: %s", err)))
+		panic(i.error(fmt.Sprintf("could not create command pipe: %s", err.Error())))
 	}
+
+	i.Printer.Push(Statement{
+		Cmd:    cmd, // cmd included here so printer can wait
+		StdOut: cmdOut,
+	})
+
+	if err := cmd.Start(); err != nil {
+		panic(i.error(fmt.Sprintf("could not run command: %s", err.Error())))
+	}
+
 	return nil
 }
 
-func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
+func relativeDedent(command string) string {
+	lines := strings.Split(command, "\n")
+	if len(lines) > 1 {
+		firstLineWhitespace := len(lines[1]) - len(strings.TrimLeft(lines[1], " \t"))
+		for i := 1; i < len(lines); i++ {
+			if len(lines[i]) > firstLineWhitespace {
+				lines[i] = lines[i][firstLineWhitespace:]
+			}
+		}
+		command = strings.Join(lines, "\n")
+	}
+	return command
+}
+
+func (i *Interpreter) VisitRunStatement(statement tree.RunStatement) interface{} {
 	startEnvironment := i.Environment
 	i.Environment = env.NewEnvironment(i.Environment)
 	defer func() {
 		i.Environment = startEnvironment
 	}()
 
-	body := stmt.Body
+	body := statement.Body
 
-	if stmt.Name != (token.Token{}) {
-		targetBodyInt, err := i.Environment.Get(stmt.Name.Text, env.VTTarget)
+	if statement.Name != (token.Token{}) {
+		targetBodyInt, err := i.Environment.Get(statement.Name.Text, env.VTTarget)
 		if err != nil {
 			panic(i.error(err.Error()))
 		}
@@ -157,18 +210,15 @@ func (i *Interpreter) VisitRunStatement(stmt tree.RunStatement) interface{} {
 	return nil
 }
 
-func (i *Interpreter) VisitDescribeStatement(stmt tree.DescribeStatement) interface{} {
-	if !i.PrintOutput {
-		return nil
-	}
-	for _, line := range stmt.Lines {
-		fmt.Printf("> %s\n", trimQuotes(line.Value))
+func (i *Interpreter) VisitDescribeStatement(statement tree.DescribeStatement) interface{} {
+	for _, line := range statement.Lines {
+		i.Printer.PushStr(fmt.Sprintf("> %s\n", trimQuotes(line.Value)))
 	}
 	return nil
 }
 
-func (i *Interpreter) VisitExtendsStatement(stmt tree.ExtendsStatement) interface{} {
-	for _, path := range stmt.Paths {
+func (i *Interpreter) VisitExtendsStatement(statement tree.ExtendsStatement) interface{} {
+	for _, path := range statement.Paths {
 		evaluatedPath := path.Accept(i)
 		evaluatedPath = trimQuotes(evaluatedPath)
 		if pathStr, isString := evaluatedPath.(string); isString {
@@ -184,8 +234,8 @@ func (i *Interpreter) VisitExtendsStatement(stmt tree.ExtendsStatement) interfac
 	return nil
 }
 
-func (i *Interpreter) VisitExpressionStatement(stmt tree.ExpressionStatement) interface{} {
-	return stmt.Expression.Accept(i)
+func (i *Interpreter) VisitExpressionStatement(statement tree.ExpressionStatement) interface{} {
+	return statement.Expression.Accept(i)
 }
 
 func (i *Interpreter) VisitLiteralExpr(expr tree.Literal) interface{} {
@@ -229,8 +279,9 @@ func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
 		var strBuilder strings.Builder
 		for _, action := range typedVal.Body {
 			if run, ok := action.(tree.ActionStatement); ok {
-				stdout := runShellCommandAndCapture(run.Body.Text, nil, i.Config.getShell())
-				strBuilder.Write(stdout)
+				cmd := createCommand(run.Body.Text, nil, i.Config.getShell())
+				stdOutStdErr, _ := cmd.CombinedOutput()
+				strBuilder.Write(stdOutStdErr)
 			}
 		}
 		return strBuilder.String(), nil
@@ -256,10 +307,7 @@ func (re *RuntimeError) Error() string {
 	return re.Message
 }
 
-func runShellCommandAndCapture(cmdString string, variables map[string]interface{}, shell string) []byte {
-	if len(cmdString) == 0 {
-		return []byte{}
-	}
+func createCommand(cmdString string, variables map[string]interface{}, shell string) *exec.Cmd {
 	cmd := exec.Command(shell, "-c", cmdString)
 	cmd.Env = os.Environ()
 	for name, value := range variables {
@@ -268,25 +316,7 @@ func runShellCommandAndCapture(cmdString string, variables map[string]interface{
 			fmt.Sprintf("%s=%s", name, trimQuotes(value)),
 		)
 	}
-	stdOutStdErr, _ := cmd.CombinedOutput()
-	return stdOutStdErr
-}
-
-func runShellCommandAndPipeToStdout(cmdString string, variables map[string]interface{}, shell string) error {
-	if len(cmdString) == 0 {
-		// todo
-	}
-	cmd := exec.Command(shell, "-c", cmdString)
-	cmd.Env = os.Environ()
-	for name, value := range variables {
-		cmd.Env = append(
-			cmd.Env,
-			fmt.Sprintf("%s=%s", name, trimQuotes(value)),
-		)
-	}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	return cmd
 }
 
 func trimQuotes(input interface{}) interface{} {

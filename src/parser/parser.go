@@ -48,8 +48,10 @@ func (p *Parser) declaration() tree.Statement {
 		return p.varDeclaration()
 	} else if p.match(token.TARGET) {
 		return p.targetDeclaration()
-	} else if p.match(token.RUN) {
-		return p.runDeclaration()
+	} else if p.check(token.RUN) { // this feels hacky
+		modifier := p.peek().Modifier
+		p.advance()
+		return p.runDeclaration(modifier)
 	} else if p.match(token.DESCRIBE) {
 		return p.describeDeclaration()
 	} else if p.match(token.EXTENDS) {
@@ -163,7 +165,7 @@ func (p *Parser) targetDeclaration() tree.Statement {
 	return targetDecl
 }
 
-func (p *Parser) runDeclaration() tree.Statement {
+func (p *Parser) runDeclaration(modifier *token.TokenModifier) tree.Statement {
 	runDecl := tree.RunStatement{
 		Body: make([]tree.Statement, 0),
 	}
@@ -182,13 +184,24 @@ func (p *Parser) runDeclaration() tree.Statement {
 	depth := p.increaseDepth()
 
 	for !p.isAtEnd() {
-		runDecl.Body = append(runDecl.Body, p.declaration())
+		runDecl.Body = append(runDecl.Body, p.declaration()) // is this correct?
 		if p.check(token.RIGHT_BRACE) && depth == p.Depth {
 			break
 		}
 	}
 
 	p.consume(token.RIGHT_BRACE, "expect right brace")
+
+	if modifier != nil {
+		switch *modifier {
+		case token.BEFORE:
+			runDecl.Stage = tree.BEFORE
+		case token.AFTER:
+			runDecl.Stage = tree.AFTER
+		}
+	} else {
+		runDecl.Stage = tree.DURING
+	}
 
 	p.reduceDepth()
 
@@ -208,8 +221,8 @@ func (p *Parser) describeDeclaration() tree.Statement {
 		initialiser := p.declaration()
 
 		var value interface{}
-		if stmt, ok := initialiser.(tree.ExpressionStatement); ok {
-			if literal, ok := stmt.Expression.(tree.Literal); ok {
+		if statement, ok := initialiser.(tree.ExpressionStatement); ok {
+			if literal, ok := statement.Expression.(tree.Literal); ok {
 				value = literal.Value
 			}
 		}
@@ -273,10 +286,10 @@ func (p *Parser) actionStatement() tree.Statement {
 }
 
 func (p *Parser) expressionStatement() tree.Statement {
-	exprStmt := tree.ExpressionStatement{
+	exprstatement := tree.ExpressionStatement{
 		Expression: p.expression(),
 	}
-	return exprStmt
+	return exprstatement
 }
 
 func (p *Parser) expression() tree.Expression {

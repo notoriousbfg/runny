@@ -86,14 +86,26 @@ func (l *Lexer) nextChar() string {
 	return char
 }
 
-func (l *Lexer) addToken(tokenType token.TokenType, text string) {
-	l.Tokens = append(l.Tokens, token.Token{
+type TokenOptionFunc func(*token.Token)
+
+func withModifier(modifier token.TokenModifier) func(*token.Token) {
+	return func(token *token.Token) {
+		token.Modifier = &modifier
+	}
+}
+
+func (l *Lexer) addToken(tokenType token.TokenType, text string, options ...TokenOptionFunc) {
+	token := token.Token{
 		Type:     tokenType,
 		Text:     text,
 		Position: l.Start,
 		Line:     l.Line,
 		Depth:    l.Depth,
-	})
+	}
+	for _, opt := range options {
+		opt(&token)
+	}
+	l.Tokens = append(l.Tokens, token)
 }
 
 func (l *Lexer) TokenTypes() []token.TokenType {
@@ -174,9 +186,12 @@ func (l *Lexer) matchNumber() {
 
 func (l *Lexer) matchIdentifier() {
 	identifier := l.readIdentifier()
-	if keyword, isKeyword := token.Keywords[identifier]; isKeyword {
+	if keyword, isKeyword := l.isKeyword(identifier); isKeyword {
 		l.addToken(keyword, identifier)
 		l.Context.setContext(keyword)
+	} else if keyword, mod, _, hasTag := l.hasModifier(identifier); hasTag {
+		l.addToken(*keyword, identifier, withModifier(*mod))
+		l.Context.setContext(*keyword)
 	} else {
 		// we're in target context if running target
 		if l.lastToken().Type == token.RUN {
@@ -184,6 +199,29 @@ func (l *Lexer) matchIdentifier() {
 		}
 		l.addToken(token.IDENTIFIER, identifier)
 	}
+}
+
+func (l *Lexer) isKeyword(identifier string) (token.TokenType, bool) {
+	keyword, isKeyword := token.Keywords[identifier]
+	return keyword, isKeyword
+}
+
+func (l *Lexer) hasModifier(identifier string) (*token.TokenType, *token.TokenModifier, string, bool) {
+	if strings.Contains(identifier, ":") {
+		parts := strings.Split(identifier, ":")
+		var keywordType *token.TokenType
+		if keyword, ok := l.isKeyword(parts[0]); ok {
+			keywordType = &keyword
+		}
+		var modifierType *token.TokenModifier
+		if modifier, ok := token.Modifiers[parts[1]]; ok {
+			modifierType = &modifier
+		}
+		if keywordType != nil && modifierType != nil {
+			return keywordType, modifierType, parts[0], true
+		}
+	}
+	return nil, nil, "", false
 }
 
 func (l *Lexer) readIdentifier() string {
