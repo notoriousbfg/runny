@@ -2,7 +2,6 @@ package interpreter
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -116,9 +115,9 @@ func (i *Interpreter) VisitTargetStatement(statement tree.TargetStatement) inter
 	sort.SliceStable(statements, func(i, j int) bool {
 		return orderValue(statements[i]) < orderValue(statements[j])
 	})
-	for _, s := range statements {
-		log.Printf("%+v", s)
-	}
+	// for _, s := range statements {
+	// 	log.Printf("%+v", s)
+	// }
 	i.Environment.Define(statement.Name.Text, env.VTTarget, statements)
 	return nil
 }

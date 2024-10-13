@@ -189,8 +189,9 @@ func (l *Lexer) matchIdentifier() {
 	if keyword, isKeyword := l.isKeyword(identifier); isKeyword {
 		l.addToken(keyword, identifier)
 		l.Context.setContext(keyword)
-	} else if keyword, mod, ident, hasTag := l.hasModifier(identifier); hasTag {
-		l.addToken(*keyword, ident, withModifier(*mod))
+	} else if keyword, mod, _, hasTag := l.hasModifier(identifier); hasTag {
+		l.addToken(*keyword, identifier, withModifier(*mod))
+		l.Context.setContext(*keyword)
 	} else {
 		// we're in target context if running target
 		if l.lastToken().Type == token.RUN {

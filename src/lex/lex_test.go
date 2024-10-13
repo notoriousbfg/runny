@@ -9,7 +9,7 @@ import (
 type TokenCase struct {
 	name        string
 	inputString string
-	want        []token.Token
+	want        func() []token.Token
 	wantErr     bool
 }
 
@@ -18,76 +18,86 @@ func TestLexer(t *testing.T) {
 		{
 			name:        "basic: string variable declaration",
 			inputString: "var { hello \"world\" }",
-			want: []token.Token{
-				{Type: token.VAR, Text: "var"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.IDENTIFIER, Text: "hello"},
-				{Type: token.STRING, Text: "\"world\""},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.EOF, Text: ""},
+			want: func() []token.Token {
+				return []token.Token{
+					{Type: token.VAR, Text: "var"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.IDENTIFIER, Text: "hello"},
+					{Type: token.STRING, Text: "\"world\""},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.EOF, Text: ""},
+				}
 			},
 		},
 		{
 			name:        "basic: multiple string variable declarations",
 			inputString: "var { hello \"world\", name \"tim\" }",
-			want: []token.Token{
-				{Type: token.VAR, Text: "var"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.IDENTIFIER, Text: "hello"},
-				{Type: token.STRING, Text: "\"world\""},
-				{Type: token.COMMA, Text: ","},
-				{Type: token.IDENTIFIER, Text: "name"},
-				{Type: token.STRING, Text: "\"tim\""},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.EOF, Text: ""},
+			want: func() []token.Token {
+				return []token.Token{
+					{Type: token.VAR, Text: "var"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.IDENTIFIER, Text: "hello"},
+					{Type: token.STRING, Text: "\"world\""},
+					{Type: token.COMMA, Text: ","},
+					{Type: token.IDENTIFIER, Text: "name"},
+					{Type: token.STRING, Text: "\"tim\""},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.EOF, Text: ""},
+				}
 			},
 		},
 		{
 			name:        "basic: target",
 			inputString: "target { run { echo \"hello\" } }",
-			want: []token.Token{
-				{Type: token.TARGET, Text: "target"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.RUN, Text: "run"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.SCRIPT, Text: `echo "hello"`},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.EOF, Text: ""},
+			want: func() []token.Token {
+				return []token.Token{
+					{Type: token.TARGET, Text: "target"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.RUN, Text: "run"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.SCRIPT, Text: `echo "hello"`},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.EOF, Text: ""},
+				}
 			},
 		},
 		{
 			name:        "basic: nested declarations",
 			inputString: "target { run { echo \"hello\" } var { name \"tim\" } run { echo $name } }",
-			want: []token.Token{
-				{Type: token.TARGET, Text: "target"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.RUN, Text: "run"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.SCRIPT, Text: `echo "hello"`},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.VAR, Text: "var"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.IDENTIFIER, Text: "name"},
-				{Type: token.STRING, Text: "\"tim\""},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.RUN, Text: "run"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.SCRIPT, Text: `echo $name`},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.EOF, Text: ""},
+			want: func() []token.Token {
+				return []token.Token{
+					{Type: token.TARGET, Text: "target"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.RUN, Text: "run"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.SCRIPT, Text: `echo "hello"`},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.VAR, Text: "var"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.IDENTIFIER, Text: "name"},
+					{Type: token.STRING, Text: "\"tim\""},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.RUN, Text: "run"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.SCRIPT, Text: `echo $name`},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.EOF, Text: ""},
+				}
 			},
 		},
 		{
 			name:        "basic: run declarations",
 			inputString: "run { echo \"hello\" echo \"tim\" }",
-			want: []token.Token{
-				{Type: token.RUN, Text: "run"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.SCRIPT, Text: `echo "hello" echo "tim"`},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.EOF, Text: ""},
+			want: func() []token.Token {
+				return []token.Token{
+					{Type: token.RUN, Text: "run"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.SCRIPT, Text: `echo "hello" echo "tim"`},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.EOF, Text: ""},
+				}
 			},
 		},
 		// {
@@ -112,63 +122,71 @@ func TestLexer(t *testing.T) {
 		{
 			name:        "intermediate: keyword inside braces",
 			inputString: "run { run something }",
-			want: []token.Token{
-				{Type: token.RUN, Text: "run"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.SCRIPT, Text: "run something"},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.EOF, Text: ""},
+			want: func() []token.Token {
+				return []token.Token{
+					{Type: token.RUN, Text: "run"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.SCRIPT, Text: "run something"},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.EOF, Text: ""},
+				}
 			},
 		},
 		{
 			name:        "intermediate: run target with no body",
 			inputString: "run mytarget {}",
-			want: []token.Token{
-				{Type: token.RUN, Text: "run"},
-				{Type: token.IDENTIFIER, Text: "mytarget"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.EOF, Text: ""},
+			want: func() []token.Token {
+				return []token.Token{
+					{Type: token.RUN, Text: "run"},
+					{Type: token.IDENTIFIER, Text: "mytarget"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.EOF, Text: ""},
+				}
 			},
 		},
 		{
 			name:        "intermediate: run target with var declaration",
 			inputString: `run mytarget { var { name "tim" } }`,
-			want: []token.Token{
-				{Type: token.RUN, Text: "run"},
-				{Type: token.IDENTIFIER, Text: "mytarget"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.VAR, Text: "var"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.IDENTIFIER, Text: "name"},
-				{Type: token.STRING, Text: "\"tim\""},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.EOF, Text: ""},
+			want: func() []token.Token {
+				return []token.Token{
+					{Type: token.RUN, Text: "run"},
+					{Type: token.IDENTIFIER, Text: "mytarget"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.VAR, Text: "var"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.IDENTIFIER, Text: "name"},
+					{Type: token.STRING, Text: "\"tim\""},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.EOF, Text: ""},
+				}
 			},
 		},
 		{
 			name:        "intermediate: multiple successive variable scripts",
 			inputString: `var { one { run { echo "one" } } two { run { echo "two" } } }`,
-			want: []token.Token{
-				{Type: token.VAR, Text: "var"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.IDENTIFIER, Text: "one"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.RUN, Text: "run"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.SCRIPT, Text: "echo \"one\""},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.IDENTIFIER, Text: "two"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.RUN, Text: "run"},
-				{Type: token.LEFT_BRACE, Text: "{"},
-				{Type: token.SCRIPT, Text: "echo \"two\""},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.RIGHT_BRACE, Text: "}"},
-				{Type: token.EOF, Text: ""},
+			want: func() []token.Token {
+				return []token.Token{
+					{Type: token.VAR, Text: "var"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.IDENTIFIER, Text: "one"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.RUN, Text: "run"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.SCRIPT, Text: "echo \"one\""},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.IDENTIFIER, Text: "two"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.RUN, Text: "run"},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.SCRIPT, Text: "echo \"two\""},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.EOF, Text: ""},
+				}
 			},
 		},
 		// {
@@ -182,6 +200,20 @@ func TestLexer(t *testing.T) {
 		// 		{Type: token.EOF, Text: ""},
 		// 	},
 		// },
+		{
+			name:        "basic: run modifier",
+			inputString: `run:before { echo "before" }`,
+			want: func() []token.Token {
+				before := token.BEFORE
+				return []token.Token{
+					{Type: token.RUN, Text: "run:before", Modifier: &before},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.SCRIPT, Text: `echo "before"`},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.EOF, Text: ""},
+				}
+			},
+		},
 	}
 
 	for _, testcase := range cases {
@@ -191,8 +223,8 @@ func TestLexer(t *testing.T) {
 			if (err != nil) != testcase.wantErr {
 				t.Fatalf("wantErr '%v', got '%+v', tokens: '%v'", testcase.wantErr, err, l.Tokens)
 			}
-			if !tokenSlicesMatch(l.Tokens, testcase.want) {
-				t.Fatal("types do not match", lex.TokenNames(testcase.want), lex.TokenNames(l.Tokens))
+			if !tokenSlicesMatch(l.Tokens, testcase.want()) {
+				t.Fatal("types do not match", lex.TokenNames(testcase.want()), lex.TokenNames(l.Tokens))
 			}
 		})
 	}

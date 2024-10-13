@@ -103,9 +103,10 @@ func (p *Parser) varDeclaration() tree.Statement {
 
 	depth := p.increaseDepth()
 
+	currentParent := p.Context.current()
 	varDecl := tree.VariableStatement{
 		Items:  make([]tree.Variable, 0),
-		Parent: p.Context.current(),
+		Parent: &currentParent,
 	}
 
 	p.Context.setContext(varDecl)
@@ -151,10 +152,11 @@ func (p *Parser) targetDeclaration() tree.Statement {
 
 	depth := p.increaseDepth()
 
+	currentParent := p.Context.current()
 	targetDecl := tree.TargetStatement{
 		Name:   name,
 		Body:   make([]tree.Statement, 0),
-		Parent: p.Context.current(),
+		Parent: &currentParent,
 	}
 
 	p.Context.setContext(targetDecl)
@@ -178,9 +180,10 @@ func (p *Parser) targetDeclaration() tree.Statement {
 }
 
 func (p *Parser) runDeclaration(modifier *token.TokenModifier) tree.Statement {
+	currentParent := p.Context.current()
 	runDecl := tree.RunStatement{
 		Body:   make([]tree.Statement, 0),
-		Parent: p.Context.current(),
+		Parent: &currentParent,
 	}
 
 	p.Context.setContext(runDecl)
@@ -229,9 +232,10 @@ func (p *Parser) describeDeclaration() tree.Statement {
 
 	depth := p.increaseDepth()
 
+	currentParent := p.Context.current()
 	descDecl := tree.DescribeStatement{
 		Lines:  make([]tree.Literal, 0),
-		Parent: p.Context.current(),
+		Parent: &currentParent,
 	}
 
 	p.Context.setContext(descDecl)
@@ -301,9 +305,10 @@ func (p *Parser) extendsDeclaration() tree.Statement {
 func (p *Parser) actionStatement() tree.Statement {
 	script := p.consume(token.SCRIPT, "expect action body")
 
+	currentParent := p.Context.current()
 	actionstatement := tree.ActionStatement{
 		Body:   script,
-		Parent: p.Context.current(),
+		Parent: &currentParent,
 	}
 
 	return actionstatement
