@@ -33,9 +33,8 @@ func (c ConfigStatement) Accept(visitor StatementVisitor) interface{} {
 }
 
 type VariableStatement struct {
-	Items  []Variable
-	Parent *Statement
-	Stage  Stage
+	Items []Variable
+	Stage Stage
 }
 
 type Variable struct {
@@ -48,9 +47,8 @@ func (vs VariableStatement) Accept(visitor StatementVisitor) interface{} {
 }
 
 type TargetStatement struct {
-	Name   token.Token
-	Body   []Statement
-	Parent *Statement
+	Name token.Token
+	Body []Statement
 }
 
 func (ts TargetStatement) Accept(visitor StatementVisitor) interface{} {
@@ -58,8 +56,7 @@ func (ts TargetStatement) Accept(visitor StatementVisitor) interface{} {
 }
 
 type ActionStatement struct {
-	Body   token.Token
-	Parent *Statement
+	Body token.Token
 }
 
 func (as ActionStatement) Accept(visitor StatementVisitor) interface{} {
@@ -75,10 +72,9 @@ const (
 )
 
 type RunStatement struct {
-	Name   token.Token
-	Body   []Statement
-	Stage  Stage
-	Parent *Statement
+	Name  token.Token
+	Body  []Statement
+	Stage Stage
 }
 
 func (rs RunStatement) Accept(visitor StatementVisitor) interface{} {
@@ -86,9 +82,8 @@ func (rs RunStatement) Accept(visitor StatementVisitor) interface{} {
 }
 
 type DescribeStatement struct {
-	Name   token.Token
-	Lines  []Literal
-	Parent *Statement
+	Name  token.Token
+	Lines []Literal
 }
 
 func (ds DescribeStatement) Accept(visitor StatementVisitor) interface{} {

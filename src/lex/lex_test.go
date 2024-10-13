@@ -214,6 +214,21 @@ func TestLexer(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:        "basic: var modifier",
+			inputString: `var:before { name "Jack" }`,
+			want: func() []token.Token {
+				before := token.BEFORE
+				return []token.Token{
+					{Type: token.VAR, Text: "var:before", Modifier: &before},
+					{Type: token.LEFT_BRACE, Text: "{"},
+					{Type: token.IDENTIFIER, Text: "name"},
+					{Type: token.STRING, Text: `"Jack"`},
+					{Type: token.RIGHT_BRACE, Text: "}"},
+					{Type: token.EOF, Text: ""},
+				}
+			},
+		},
 	}
 
 	for _, testcase := range cases {
