@@ -25,7 +25,11 @@ target hello_person {
 }
 
 # run can also be used to execute targets
-run hello_person
+run hello_person {
+    run:before {
+        echo "i'm about to say hello"
+    }
+}
 
 # with its own scoped variables
 run hello_person {
@@ -39,6 +43,9 @@ run hello_person {
         name {
             run { echo "James" }
         }
+    }
+    run:after {
+        echo "i've finished saying hello"
     }
 }
 
