@@ -1,25 +1,39 @@
-run hello_name {
-	var:before {
-		name {
-			echo "James"
-		}
+target hello_name {
+	run:before {
+		echo "before"
 	}
 	run {
-		echo "hello tim"
+		echo "during"
 	}
 	run:after {
-		echo "run complete"
+		echo "after"
 	}
 }
 
-var {
-	morning false
-}
+run hello_name
 
-run {
-	if morning {
-		run { echo "good morning" }
-	} else {
-		run { echo "good afternoon" }
-	}
-}
+# run hello_name {
+# 	var:before {
+# 		name {
+# 			echo "James"
+# 		}
+# 	}
+# 	run {
+# 		echo "hello tim"
+# 	}
+# 	run:after {
+# 		echo "run complete"
+# 	}
+# }
+
+# var {
+# 	morning false
+# }
+
+# run {
+# 	if morning {
+# 		run { echo "good morning" }
+# 	} else {
+# 		run { echo "good afternoon" }
+# 	}
+# }

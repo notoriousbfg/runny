@@ -13,8 +13,8 @@ type Statement struct {
 	Cmd    *exec.Cmd
 	StdOut io.ReadCloser
 	StdErr io.ReadCloser
-	Before func() Statement
-	After  func() Statement
+	Before func() []Statement
+	After  func() []Statement
 }
 
 type Printer struct {
@@ -22,34 +22,38 @@ type Printer struct {
 }
 
 func (p *Printer) Print() {
-	for _, stmt := range p.Statements {
-		if stmt.Before != nil {
-			p.printStatement(stmt.Before())
+	for _, statement := range p.Statements {
+		if statement.Before != nil {
+			for _, before := range statement.Before() {
+				p.printStatement(before)
+			}
 		}
-		p.printStatement(stmt)
-		if stmt.After != nil {
-			p.printStatement(stmt.After())
+		p.printStatement(statement)
+		if statement.After != nil {
+			for _, after := range statement.After() {
+				p.printStatement(after)
+			}
 		}
 	}
 }
 
-func (p *Printer) printStatement(stmt Statement) {
-	content, err := io.ReadAll(stmt.StdOut)
+func (p *Printer) printStatement(statement Statement) {
+	content, err := io.ReadAll(statement.StdOut)
 	if err != nil {
 		panic(p.error(err.Error()))
 	}
 	fmt.Print(string(content))
-	stmt.StdOut.Close()
-	if stmt.Cmd != nil {
-		err := stmt.Cmd.Wait()
+	statement.StdOut.Close()
+	if statement.Cmd != nil {
+		err := statement.Cmd.Wait()
 		if err != nil {
 			panic(p.error(err.Error()))
 		}
 	}
 }
 
-func (p *Printer) Push(stmt Statement) {
-	p.Statements = append(p.Statements, stmt)
+func (p *Printer) Push(statement Statement) {
+	p.Statements = append(p.Statements, statement)
 }
 
 func (p *Printer) PushStr(str string) {

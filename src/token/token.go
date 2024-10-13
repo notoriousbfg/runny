@@ -57,10 +57,28 @@ var Keywords = map[string]TokenType{
 	"desc":    DESCRIBE,
 }
 
+type TokenModifier int
+
+const (
+	BEFORE TokenModifier = iota
+	AFTER
+)
+
+var TokenModifierNames = map[TokenModifier]string{
+	BEFORE: "BEFORE",
+	AFTER:  "AFTER",
+}
+
+var Modifiers = map[string]TokenModifier{
+	"before": BEFORE,
+	"after":  AFTER,
+}
+
 type Token struct {
 	Type     TokenType
 	Text     string
 	Position int
 	Line     int
 	Depth    int
+	Modifier *TokenModifier
 }
