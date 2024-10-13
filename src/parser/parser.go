@@ -210,12 +210,12 @@ func (p *Parser) runDeclaration(modifier *token.TokenModifier) tree.Statement {
 	if modifier != nil {
 		switch *modifier {
 		case token.BEFORE:
-			runDecl.Order = tree.BEFORE
+			runDecl.Stage = tree.BEFORE
 		case token.AFTER:
-			runDecl.Order = tree.AFTER
+			runDecl.Stage = tree.AFTER
 		}
 	} else {
-		runDecl.Order = tree.DURING
+		runDecl.Stage = tree.DURING
 	}
 
 	p.Context.resetContext()

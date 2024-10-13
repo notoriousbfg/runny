@@ -35,7 +35,7 @@ func (c ConfigStatement) Accept(visitor StatementVisitor) interface{} {
 type VariableStatement struct {
 	Items  []Variable
 	Parent Statement
-	Order  ExecutionOrder
+	Stage  Stage
 }
 
 type Variable struct {
@@ -66,10 +66,10 @@ func (as ActionStatement) Accept(visitor StatementVisitor) interface{} {
 	return visitor.VisitActionStatement(as)
 }
 
-type ExecutionOrder int
+type Stage int
 
 const (
-	DURING ExecutionOrder = iota
+	DURING Stage = iota
 	BEFORE
 	AFTER
 )
@@ -77,7 +77,7 @@ const (
 type RunStatement struct {
 	Name   token.Token
 	Body   []Statement
-	Order  ExecutionOrder
+	Stage  Stage
 	Parent Statement
 }
 

@@ -126,7 +126,7 @@ func (i *Interpreter) VisitTargetStatement(statement tree.TargetStatement) inter
 func orderValue(statement tree.Statement) int {
 	switch statementTyped := statement.(type) {
 	case tree.RunStatement:
-		switch statementTyped.Order {
+		switch statementTyped.Stage {
 		case tree.BEFORE:
 			return 1
 		case tree.DURING:
