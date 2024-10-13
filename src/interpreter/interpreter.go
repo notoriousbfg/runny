@@ -115,9 +115,6 @@ func (i *Interpreter) VisitTargetStatement(statement tree.TargetStatement) inter
 	sort.SliceStable(statements, func(i, j int) bool {
 		return orderValue(statements[i]) < orderValue(statements[j])
 	})
-	// for _, s := range statements {
-	// 	log.Printf("%+v", s)
-	// }
 	i.Environment.Define(statement.Name.Text, env.VTTarget, statements)
 	return nil
 }
@@ -150,7 +147,7 @@ func (i *Interpreter) VisitActionStatement(statement tree.ActionStatement) inter
 	}
 
 	// print command string (highlighted)
-	i.Printer.PushStr(fmt.Sprintf("%s%s%s\n", foreColour, statement.Body.Text, aftColour))
+	i.Printer.PushStr(fmt.Sprintf("%s%s%s\n", foreColour, relativeDedent(statement.Body.Text), aftColour))
 
 	cmd := createCommand(statement.Body.Text, evaluated, i.Config.getShell())
 
@@ -170,6 +167,20 @@ func (i *Interpreter) VisitActionStatement(statement tree.ActionStatement) inter
 	}
 
 	return nil
+}
+
+func relativeDedent(command string) string {
+	lines := strings.Split(command, "\n")
+	if len(lines) > 1 {
+		firstLineWhitespace := len(lines[1]) - len(strings.TrimLeft(lines[1], " \t"))
+		for i := 1; i < len(lines); i++ {
+			if len(lines[i]) > firstLineWhitespace {
+				lines[i] = lines[i][firstLineWhitespace:]
+			}
+		}
+		command = strings.Join(lines, "\n")
+	}
+	return command
 }
 
 func (i *Interpreter) VisitRunStatement(statement tree.RunStatement) interface{} {
