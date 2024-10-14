@@ -27,11 +27,24 @@ func (p *Printer) Print() {
 }
 
 func (p *Printer) printStatement(statement Statement) {
-	scanner := bufio.NewScanner(statement.StdOut)
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
-	}
-	statement.StdOut.Close()
+	go func() {
+		scanner := bufio.NewScanner(statement.StdOut)
+		for scanner.Scan() {
+			fmt.Println(scanner.Text())
+		}
+		if err := scanner.Err(); err != nil {
+			fmt.Println(err.Error())
+		}
+	}()
+	go func() {
+		scanner := bufio.NewScanner(statement.StdErr)
+		for scanner.Scan() {
+			fmt.Println(scanner.Text())
+		}
+		if err := scanner.Err(); err != nil {
+			fmt.Println(err.Error())
+		}
+	}()
 	if statement.Cmd != nil {
 		err := statement.Cmd.Wait()
 		if err != nil {

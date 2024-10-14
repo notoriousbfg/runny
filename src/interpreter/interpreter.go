@@ -157,9 +157,15 @@ func (i *Interpreter) VisitActionStatement(statement tree.ActionStatement) inter
 		panic(i.error(fmt.Sprintf("could not create command pipe: %s", err.Error())))
 	}
 
+	cmdErr, err := cmd.StderrPipe()
+	if err != nil {
+		panic(i.error(fmt.Sprintf("could not create command pipe: %s", err.Error())))
+	}
+
 	i.Printer.Push(Statement{
 		Cmd:    cmd, // cmd included here so printer can wait
 		StdOut: cmdOut,
+		StdErr: cmdErr,
 	})
 
 	if err := cmd.Start(); err != nil {

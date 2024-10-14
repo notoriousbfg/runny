@@ -1,0 +1,37 @@
+config {
+    shell "/bin/bash"
+}
+
+target sleep {
+    run {
+        sleep $time
+        echo "Done"
+    }
+}
+
+run sleep {
+    desc {
+        "1"
+    }
+    var:before {
+        time 1
+    }
+}
+
+run sleep {
+    desc {
+        "6"
+    }
+    var:before {
+        time 6
+    }
+}
+
+run sleep {
+    desc {
+        "12"
+    }
+    var:before {
+        time 12
+    }
+}
