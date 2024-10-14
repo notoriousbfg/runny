@@ -1,0 +1,12 @@
+config {
+    shell "/bin/bash"
+}
+
+run {
+    i=1
+    while true; do
+        echo "Iteration $i"
+        ((i++))
+        sleep 1
+    done
+}
