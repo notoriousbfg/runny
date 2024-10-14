@@ -94,6 +94,14 @@ func withModifier(modifier token.TokenModifier) func(*token.Token) {
 	}
 }
 
+func withPosition(position, line, depth int) func(*token.Token) {
+	return func(token *token.Token) {
+		token.Position = position
+		token.Depth = depth
+		token.Line = line
+	}
+}
+
 func (l *Lexer) addToken(tokenType token.TokenType, text string, options ...TokenOptionFunc) {
 	token := token.Token{
 		Type:     tokenType,
@@ -145,6 +153,7 @@ func (l *Lexer) matchComment() {
 
 func (l *Lexer) matchScript() {
 	start := l.Start + 1
+	firstLine := l.Line
 	bracesCount := 1
 	for !l.isAtEnd() {
 		if l.peek() == "\n" {
@@ -161,7 +170,11 @@ func (l *Lexer) matchScript() {
 	}
 	text := l.Input[start:l.Current]
 	if len(text) > 0 {
-		l.addToken(token.SCRIPT, strings.TrimSpace(text))
+		l.addToken(
+			token.SCRIPT,
+			strings.TrimSpace(text),
+			withPosition(start, firstLine, l.Depth),
+		)
 	}
 }
 

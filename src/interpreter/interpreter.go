@@ -169,18 +169,33 @@ func (i *Interpreter) VisitActionStatement(statement tree.ActionStatement) inter
 	return nil
 }
 
-func relativeDedent(command string) string {
-	lines := strings.Split(command, "\n")
+func relativeDedent(inputString string) string {
+	lines := strings.Split(inputString, "\n")
 	if len(lines) > 1 {
-		firstLineWhitespace := len(lines[1]) - len(strings.TrimLeft(lines[1], " \t"))
-		for i := 1; i < len(lines); i++ {
-			if len(lines[i]) > firstLineWhitespace {
-				lines[i] = lines[i][firstLineWhitespace:]
+		lowestPositiveIndent := 0
+		for _, line := range lines {
+			whitespace := countLeadingSpaces(line)
+			if lowestPositiveIndent <= 0 {
+				lowestPositiveIndent = whitespace
+				continue
+			}
+			if whitespace < lowestPositiveIndent && whitespace != 0 {
+				lowestPositiveIndent = whitespace
 			}
 		}
-		command = strings.Join(lines, "\n")
+		for i, line := range lines {
+			if i == 0 {
+				continue
+			}
+			lines[i] = line[lowestPositiveIndent:]
+		}
+		return strings.Join(lines, "\n")
 	}
-	return command
+	return inputString
+}
+
+func countLeadingSpaces(line string) int {
+	return len(line) - len(strings.TrimLeft(line, " "))
 }
 
 func (i *Interpreter) VisitRunStatement(statement tree.RunStatement) interface{} {
