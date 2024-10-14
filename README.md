@@ -1,29 +1,30 @@
 # Runny
 
-Runny is a `Make` or <a href="https://github.com/casey/just">just</a> alternative. With runny you can keep all your project's commands in one place.
+Runny is a `Make` or `just` alternative. With runny you can keep all of your project's commands in one place.
 
-## Getting Started
+You can then run them with `runny {?target}`
+```
+$ runny monitor_disk_usage -f examples/kitchensink.rny
+
+> Monitor disk usage and warn if it exceeds 80%
+if [ "$current_usage" -ge "$threshold" ]; then
+    echo "Warning: Disk usage is at ${current_usage}%"
+else
+    echo "Disk usage is under control: ${current_usage}%"
+fi
+Disk usage is under control: 5%
+```
 
 Runny's vocabulary is deliberately very simple. There are just 3 core keywords: `var`, `target` and `run` (and some other peripheral ones).
 
-`var` is for defining variables. These can be static:
+`var` is for defining variables:
 ```
 var {
     name "Tim"
 }
 ```
-or runny can capture a script's stdout with a `run` statement:
-```
-var {
-    name {
-        run { echo "Tim" }
-    }
-}
-```
-Variables are transferred to your environment.
 
-
-A `target` is for commands you want to run later:
+A `target` contains things you want to run later:
 ```
 target say_hello {
     run {
@@ -31,60 +32,23 @@ target say_hello {
     }
 }
 ```
-Use the `desc` keyboard to describe your targets:
+
+`run` is for executing shell commands:
 ```
-target say_hello {
-    desc {
-        "it says hello"
-    }
-    ...
+run {
+    echo "hello world"
 }
 ```
 
-The `run` keyword can be used to execute targets
-```
-run say_hello
-```
-or to run arbitrary shell commands, which can also be the output of run statements themselves.
-```
-run { echo "hello world" }
-```
-You can also define scoped variables within your run statement.
-```
-run say_hello {
-    var {
-        name "Tim"
-    }
-}
-```
-A runny config can be extended from another using the `extends` keyword.
-```
-extends {
-    "./parent.rny"
-}
-```
+See the <a href="./examples/kitchensink.rny">kitchen sink</a> for some practical examples of all of the language's features.
 
-Lastly, you can specify the shell you'd prefer to use with the `config` keyword.
-```
-config {
-    shell "/bin/bash"
-}
-```
-
-Use the `runny` executable in your terminal to specify targets to run:
-```
-runny {my_target}
-```
-
-By default runny will look for a `runny.rny` file or you can specify the path to a file with:
-```
-runny -f {path-to-file}.rny
-```
+## Config files
+By default Runny looks for a `runny.rny` file in the current directory. If you want to use a different config file you can pass the `-f` flag.
 
 ## Editor Support
-Currently Runny is supported in VSCode by installing the editor/runny-0.0.1.vsix file. Support will be added for other editors in the near future.
+Syntax highlighting for Runny is currently supported in VSCode by installing the <a href="./editor/runny-0.0.1.vsix">editor/runny-0.0.1.vsix</a> file. Support will be added for other editors in the near future.
 
 ## Ongoing Development
-runny is the first (working) language I've written. Much of its inner workings are based on lox, from the wonderful book [Crafting Interpreters](https://craftinginterpreters.com).
+Runny is the first (working) language I've written. Much of its inner workings are based on lox, from the wonderful book [Crafting Interpreters](https://craftinginterpreters.com).
 
-If you'd like to contribute to runny please do raise an issue or open a pull request. I'm eager to improve the language.
+If you'd like to contribute to my project please raise an issue or open a pull request. I'm eager to improve the language with the advice & experience of others.
