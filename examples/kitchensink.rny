@@ -1,52 +1,79 @@
-extends {
-    "./parent.rny"
-}
-
-# config can be used to set project-wide settings, like the shell you want to use
 config {
     shell "/bin/bash"
 }
 
-# this is a comment
-# variables can store literals
-var {
-    name "Tim"
-}
-
-# targets contain commands and scoped variables
-target hello_person {
+# monitor disk usage and sends a warning if over a certain threshold
+target monitor_disk_usage {
     desc {
-        "say hello to a person",
-        "$name, the name of the person to say hello to"
+        "Monitor disk usage and warn if it exceeds 80%"
     }
-    run {
-        echo "hello $name"
-    }
-}
-
-# run can also be used to execute targets
-run hello_person {
-    run:before {
-        echo "i'm about to say hello"
-    }
-}
-
-# with its own scoped variables
-run hello_person {
     var {
-        name "Sarah"
+        threshold 80
     }
-}
-
-run hello_person {
-    var {
-        name {
-            run { echo "James" }
+    var:before {
+        current_usage {
+            run { df / | tail -1 | awk '{print $5}' | sed 's/%//' }
         }
     }
-    run:after {
-        echo "i've finished saying hello"
+    run {
+        if [ "$current_usage" -ge "$threshold" ]; then
+            echo "Warning: Disk usage is at ${current_usage}%"
+        else
+            echo "Disk usage is under control: ${current_usage}%"
+        fi
     }
 }
 
-run say_goodbye
+# monitor CPU usage and show processes taking the most CPU
+target monitor_cpu_usage {
+    desc {
+        "Top 5 processes by CPU usage:"
+    }
+    run {
+        ps aux | sort -nrk 3,3 | head -n 5
+    }
+}
+
+# ping a website and checks if it's reachable
+target check_website {
+    desc {
+        "Check if a website is reachable"
+    }
+    var {
+        website "google.com"
+    }
+    run {
+        if ping -c 1 "$website" &> /dev/null; then
+            echo "$website is reachable"
+        else
+            echo "$website is not reachable"
+        fi
+    }
+}
+
+# list all the files in a directory with their sizes in human-readable format
+target list_files_with_sizes {
+    desc {
+        "List all files in a directory with their sizes"
+    }
+    var {
+        directory "./"
+    }
+    run {
+        echo "Listing files in $directory:"
+        ls -lh "$directory" | awk '{print $9 ": " $5}'
+    }
+}
+
+# run a sequence of cleanup and monitoring tasks
+target system_maintenance {
+    desc {
+        "Run system maintenance tasks"
+    }
+    run monitor_disk_usage
+    run monitor_cpu_usage
+    run check_website
+}
+
+# run the system maintenance task automatically
+run system_maintenance

@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os/exec"
@@ -13,8 +14,6 @@ type Statement struct {
 	Cmd    *exec.Cmd
 	StdOut io.ReadCloser
 	StdErr io.ReadCloser
-	Before func() []Statement
-	After  func() []Statement
 }
 
 type Printer struct {
@@ -23,26 +22,15 @@ type Printer struct {
 
 func (p *Printer) Print() {
 	for _, statement := range p.Statements {
-		if statement.Before != nil {
-			for _, before := range statement.Before() {
-				p.printStatement(before)
-			}
-		}
 		p.printStatement(statement)
-		if statement.After != nil {
-			for _, after := range statement.After() {
-				p.printStatement(after)
-			}
-		}
 	}
 }
 
 func (p *Printer) printStatement(statement Statement) {
-	content, err := io.ReadAll(statement.StdOut)
-	if err != nil {
-		panic(p.error(err.Error()))
+	scanner := bufio.NewScanner(statement.StdOut)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
 	}
-	fmt.Print(string(content))
 	statement.StdOut.Close()
 	if statement.Cmd != nil {
 		err := statement.Cmd.Wait()

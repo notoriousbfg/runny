@@ -151,7 +151,7 @@ func (i *Interpreter) VisitActionStatement(statement tree.ActionStatement) inter
 
 	cmd := createCommand(statement.Body.Text, evaluated, i.Config.getShell())
 
-	// creates a pipe to stdout that can be read by printer instance
+	// creates a pipe to stdout that can be scanned by printer instance
 	cmdOut, err := cmd.StdoutPipe()
 	if err != nil {
 		panic(i.error(fmt.Sprintf("could not create command pipe: %s", err.Error())))
@@ -169,18 +169,33 @@ func (i *Interpreter) VisitActionStatement(statement tree.ActionStatement) inter
 	return nil
 }
 
-func relativeDedent(command string) string {
-	lines := strings.Split(command, "\n")
+func relativeDedent(inputString string) string {
+	lines := strings.Split(inputString, "\n")
 	if len(lines) > 1 {
-		firstLineWhitespace := len(lines[1]) - len(strings.TrimLeft(lines[1], " \t"))
-		for i := 1; i < len(lines); i++ {
-			if len(lines[i]) > firstLineWhitespace {
-				lines[i] = lines[i][firstLineWhitespace:]
+		lowestPositiveIndent := 0
+		for _, line := range lines {
+			whitespace := countLeadingSpaces(line)
+			if lowestPositiveIndent <= 0 {
+				lowestPositiveIndent = whitespace
+				continue
+			}
+			if whitespace < lowestPositiveIndent && whitespace != 0 {
+				lowestPositiveIndent = whitespace
 			}
 		}
-		command = strings.Join(lines, "\n")
+		for i, line := range lines {
+			if i == 0 {
+				continue
+			}
+			lines[i] = line[lowestPositiveIndent:]
+		}
+		return strings.Join(lines, "\n")
 	}
-	return command
+	return inputString
+}
+
+func countLeadingSpaces(line string) int {
+	return len(line) - len(strings.TrimLeft(line, " "))
 }
 
 func (i *Interpreter) VisitRunStatement(statement tree.RunStatement) interface{} {
@@ -281,7 +296,11 @@ func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
 			if run, ok := action.(tree.ActionStatement); ok {
 				cmd := createCommand(run.Body.Text, nil, i.Config.getShell())
 				stdOutStdErr, _ := cmd.CombinedOutput()
-				strBuilder.Write(stdOutStdErr)
+				// opinionated: always trim trailing newline
+				// var runs are mostly variables inserted into something else
+				// where it's not helpful to have a trailing newline
+				trimmedOutput := strings.TrimRight(string(stdOutStdErr), "\n")
+				strBuilder.WriteString(trimmedOutput)
 			}
 		}
 		return strBuilder.String(), nil
