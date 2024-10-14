@@ -1,6 +1,6 @@
 # Runny
 
-With runny you can keep all your project's commands in one place.
+Runny is a `Make` or <a href="https://github.com/casey/just">just</a> alternative. With runny you can keep all your project's commands in one place.
 
 ## Getting Started
 

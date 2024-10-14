@@ -151,7 +151,7 @@ func (i *Interpreter) VisitActionStatement(statement tree.ActionStatement) inter
 
 	cmd := createCommand(statement.Body.Text, evaluated, i.Config.getShell())
 
-	// creates a pipe to stdout that can be read by printer instance
+	// creates a pipe to stdout that can be scanned by printer instance
 	cmdOut, err := cmd.StdoutPipe()
 	if err != nil {
 		panic(i.error(fmt.Sprintf("could not create command pipe: %s", err.Error())))
@@ -296,7 +296,11 @@ func (i *Interpreter) lookupVariable(name string) (interface{}, error) {
 			if run, ok := action.(tree.ActionStatement); ok {
 				cmd := createCommand(run.Body.Text, nil, i.Config.getShell())
 				stdOutStdErr, _ := cmd.CombinedOutput()
-				strBuilder.Write(stdOutStdErr)
+				// opinionated: always trim trailing newline
+				// var runs are mostly variables inserted into something else
+				// where it's not helpful to have a trailing newline
+				trimmedOutput := strings.TrimRight(string(stdOutStdErr), "\n")
+				strBuilder.WriteString(trimmedOutput)
 			}
 		}
 		return strBuilder.String(), nil
